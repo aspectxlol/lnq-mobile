@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../models/product.dart';
 import '../models/create_order_request.dart';
 import '../services/api_service.dart';
@@ -67,35 +68,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     );
 
     if (date != null && mounted) {
-      final time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.now(),
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.dark(
-                primary: AppColors.primary,
-                onPrimary: AppColors.primaryForeground,
-                surface: AppColors.card,
-                onSurface: AppColors.foreground,
-              ),
-            ),
-            child: child!,
-          );
-        },
-      );
-
-      if (time != null) {
-        setState(() {
-          _pickupDate = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time.hour,
-            time.minute,
-          );
-        });
-      }
+      setState(() {
+        _pickupDate = DateTime(date.year, date.month, date.day);
+      });
     }
   }
 
@@ -405,7 +380,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                             borderRadius: BorderRadius.circular(8),
                             child: InputDecorator(
                               decoration: const InputDecoration(
-                                labelText: 'Pickup Date & Time (Optional)',
+                                labelText: 'Pickup Date (Optional)',
                                 prefixIcon: Icon(Icons.calendar_today),
                                 suffixIcon: Icon(
                                   Icons.arrow_forward_ios,
@@ -414,7 +389,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                               ),
                               child: Text(
                                 _pickupDate != null
-                                    ? '${_pickupDate!.day}/${_pickupDate!.month}/${_pickupDate!.year} ${_pickupDate!.hour.toString().padLeft(2, '0')}:${_pickupDate!.minute.toString().padLeft(2, '0')}'
+                                    ? DateFormat(
+                                        'MMM dd, yyyy',
+                                      ).format(_pickupDate!)
                                     : 'No pickup date set',
                                 style: TextStyle(
                                   color: _pickupDate != null

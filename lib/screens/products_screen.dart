@@ -67,10 +67,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return ListSkeleton(
               itemCount: 6,
-              itemBuilder: (context, index) => FadeInSlide(
-                delay: Duration(milliseconds: index * 50),
-                child: const ProductCardSkeleton(),
-              ),
+              itemBuilder: (context, index) => const ProductCardSkeleton(),
             );
           }
 
@@ -119,10 +116,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
       itemCount: products.length,
       itemBuilder: (context, index) {
         final product = products[index];
-        return FadeInSlide(
-          delay: Duration(milliseconds: index * 50),
-          child: _ProductCard(product: product),
-        );
+        return _ProductCard(product: product);
       },
     );
   }
@@ -133,10 +127,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
       itemCount: products.length,
       itemBuilder: (context, index) {
         final product = products[index];
-        return FadeInSlide(
-          delay: Duration(milliseconds: index * 50),
-          child: _ProductListItem(product: product),
-        );
+        return _ProductListItem(product: product);
       },
     );
   }

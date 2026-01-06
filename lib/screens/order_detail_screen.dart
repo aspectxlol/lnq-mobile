@@ -300,8 +300,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     if (order.pickupDate != null) ...[
                       const Divider(height: 24),
                       _InfoRow(
-                        label: 'Pickup Time',
-                        value: _formatDateTime(order.pickupDate!),
+                        label: 'Pickup Date',
+                        value: _formatDate(order.pickupDate!),
                       ),
                     ],
                   ],
@@ -393,6 +393,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   String _formatDateTime(DateTime date) {
     return DateFormat('MMM dd, yyyy • HH:mm').format(date);
+  }
+
+  String _formatDate(DateTime date) {
+    return DateFormat('MMM dd, yyyy').format(date);
   }
 }
 
@@ -532,37 +536,9 @@ class _EditOrderDialogState extends State<_EditOrderDialog> {
     );
 
     if (date != null && mounted) {
-      final time = await showTimePicker(
-        context: context,
-        initialTime: _pickupDate != null
-            ? TimeOfDay.fromDateTime(_pickupDate!)
-            : TimeOfDay.now(),
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.dark(
-                primary: AppColors.primary,
-                onPrimary: AppColors.primaryForeground,
-                surface: AppColors.card,
-                onSurface: AppColors.foreground,
-              ),
-            ),
-            child: child!,
-          );
-        },
-      );
-
-      if (time != null) {
-        setState(() {
-          _pickupDate = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time.hour,
-            time.minute,
-          );
-        });
-      }
+      setState(() {
+        _pickupDate = DateTime(date.year, date.month, date.day);
+      });
     }
   }
 
@@ -594,13 +570,13 @@ class _EditOrderDialogState extends State<_EditOrderDialog> {
               borderRadius: BorderRadius.circular(8),
               child: InputDecorator(
                 decoration: const InputDecoration(
-                  labelText: 'Pickup Date & Time',
+                  labelText: 'Pickup Date',
                   prefixIcon: Icon(Icons.calendar_today),
                   suffixIcon: Icon(Icons.arrow_forward_ios, size: 16),
                 ),
                 child: Text(
                   _pickupDate != null
-                      ? DateFormat('MMM dd, yyyy • HH:mm').format(_pickupDate!)
+                      ? DateFormat('MMM dd, yyyy').format(_pickupDate!)
                       : 'No pickup date set',
                   style: TextStyle(
                     color: _pickupDate != null

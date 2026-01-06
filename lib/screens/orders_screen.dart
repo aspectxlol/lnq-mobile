@@ -88,10 +88,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return ListSkeleton(
               itemCount: 5,
-              itemBuilder: (context, index) => FadeInSlide(
-                delay: Duration(milliseconds: index * 50),
-                child: const OrderCardSkeleton(),
-              ),
+              itemBuilder: (context, index) => const OrderCardSkeleton(),
             );
           }
 
@@ -149,22 +146,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
       itemCount: orders.length,
       itemBuilder: (context, index) {
         final order = orders[index];
-        return FadeInSlide(
-          delay: Duration(milliseconds: index * 50),
-          child: _OrderCard(
-            order: order,
-            onTap: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => OrderDetailScreen(orderId: order.id),
-                ),
-              );
-              if (result == true) {
-                _loadOrders();
-              }
-            },
-          ),
+        return _OrderCard(
+          order: order,
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => OrderDetailScreen(orderId: order.id),
+              ),
+            );
+            if (result == true) {
+              _loadOrders();
+            }
+          },
         );
       },
     );
@@ -294,23 +288,20 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   itemCount: selectedOrders.length,
                   itemBuilder: (context, index) {
                     final order = selectedOrders[index];
-                    return FadeInSlide(
-                      delay: Duration(milliseconds: index * 50),
-                      child: _OrderCard(
-                        order: order,
-                        onTap: () async {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  OrderDetailScreen(orderId: order.id),
-                            ),
-                          );
-                          if (result == true) {
-                            _loadOrders();
+                    return _OrderCard(
+                      order: order,
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                OrderDetailScreen(orderId: order.id),
+                          ),
+                        );
+                        if (result == true) {
+                          _loadOrders();
                           }
-                        },
-                      ),
+                      },
                     );
                   },
                 ),
@@ -381,35 +372,18 @@ class _OrderCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(
-                Icons.calendar_today,
-                size: 16,
-                color: AppColors.mutedForeground,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                _formatDate(order.createdAt),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.mutedForeground,
-                ),
-              ),
-            ],
-          ),
           if (order.pickupDate != null) ...[
             const SizedBox(height: 8),
             Row(
               children: [
                 Icon(
-                  Icons.access_time,
+                  Icons.event,
                   size: 16,
                   color: AppColors.mutedForeground,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Pickup: ${_formatDateTime(order.pickupDate!)}',
+                  'Pickup: ${_formatDate(order.pickupDate!)}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.mutedForeground,
                   ),
