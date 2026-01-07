@@ -58,7 +58,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Failed to load product',
+                      AppStrings.trWatch(context, 'failedToLoadProduct'),
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     const SizedBox(height: 12),
@@ -72,7 +72,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     const SizedBox(height: 32),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Go Back'),
+                      child: Text(AppStrings.trWatch(context, 'goBack')),
                     ),
                   ],
                 ),
@@ -125,7 +125,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildContent(Product product) {
-    final baseUrl = context.watch<SettingsProvider>().baseUrl;
+    final settings = context.watch<SettingsProvider>();
+    final baseUrl = settings.baseUrl;
     final imageUrl = product.imageId != null
         ? '$baseUrl/api/images/${product.imageId}'
         : null;
@@ -190,7 +191,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   const SizedBox(height: 24),
                   if (product.description != null) ...[
                     Text(
-                      'Description',
+                      AppStrings.trWatch(context, 'description'),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 12),
@@ -209,12 +210,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       child: Column(
                         children: [
                           _InfoRow(
-                            label: 'Product ID',
+                            label: AppStrings.trWatch(context, 'productId'),
                             value: '#${product.id}',
                           ),
                           const Divider(height: 24),
                           _InfoRow(
-                            label: 'Created',
+                            label: AppStrings.trWatch(context, 'created'),
                             value: _formatDate(product.createdAt),
                           ),
                         ],
@@ -230,7 +231,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         Navigator.pop(context);
                       },
                       icon: const Icon(Icons.shopping_cart),
-                      label: const Text('Add to Order'),
+                      label: Text(AppStrings.trWatch(context, 'addToOrder')),
                     ),
                   ),
                   const SizedBox(height: 100),

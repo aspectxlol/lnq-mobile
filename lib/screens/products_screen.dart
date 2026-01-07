@@ -39,12 +39,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = context.watch<SettingsProvider>();
-    final l10n = LocalizationHelper(settings.locale);
+    context.watch<SettingsProvider>();
     
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.products),
+        title: Text(AppStrings.trWatch(context, 'products')),
         actions: [
           IconButton(
             icon: Icon(
@@ -60,8 +59,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
               });
             },
             tooltip: _currentView == ProductView.cards
-                ? l10n.switchToListView
-                : l10n.switchToCardView,
+                ? AppStrings.trWatch(context, 'switchToListView')
+                : AppStrings.trWatch(context, 'switchToCardView'),
           ),
         ],
       ),
@@ -87,8 +86,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
           if (products.isEmpty) {
             return EmptyState(
               icon: Icons.shopping_bag_outlined,
-              title: l10n.noProducts,
-              message: l10n.noProductsAvailable,
+              title: AppStrings.trWatch(context, 'noProducts'),
+              message: AppStrings.trWatch(context, 'noProductsAvailable'),
             );
           }
 

@@ -45,12 +45,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = context.watch<SettingsProvider>();
-    final l10n = LocalizationHelper(settings.locale);
+    context.watch<SettingsProvider>();
     
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.orders),
+        title: Text(AppStrings.trWatch(context, 'orders')),
         actions: [
           IconButton(
             icon: Icon(
@@ -66,8 +65,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
               });
             },
             tooltip: _currentView == OrderView.list
-                ? l10n.switchToCalendarView
-                : l10n.switchToListViewOrder,
+                ? AppStrings.trWatch(context, 'switchToCalendarView')
+                : AppStrings.trWatch(context, 'switchToListViewOrder'),
           ),
         ],
       ),
@@ -84,7 +83,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.primaryForeground,
         icon: const Icon(Icons.add),
-        label: Text(l10n.newOrder),
+        label: Text(AppStrings.trWatch(context, 'newOrder')),
       ),
       body: FutureBuilder<List<Order>>(
         future: _ordersFuture,
@@ -108,8 +107,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
           if (orders.isEmpty) {
             return EmptyState(
               icon: Icons.receipt_long_outlined,
-              title: 'No Orders',
-              message: 'Create your first order to get started.',
+              title: AppStrings.trWatch(context, 'noOrders'),
+              message: AppStrings.trWatch(context, 'createFirstOrder'),
               action: ElevatedButton.icon(
                 onPressed: () async {
                   final result = await Navigator.push(
@@ -123,7 +122,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   }
                 },
                 icon: const Icon(Icons.add),
-                label: const Text('Create Order'),
+                label: Text(AppStrings.trWatch(context, 'createOrder')),
               ),
             );
           }
@@ -250,7 +249,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               Text(
                 _selectedDay != null
                     ? DateFormat('MMMM dd, yyyy').format(_selectedDay!)
-                    : 'Select a date',
+                    : AppStrings.trWatch(context, 'selectADate'),
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
@@ -267,7 +266,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${selectedOrders.length} ${selectedOrders.length == 1 ? 'order' : 'orders'}',
+                    '${selectedOrders.length} ${selectedOrders.length == 1 ? AppStrings.trWatch(context, 'order') : AppStrings.trWatch(context, 'ordersPlural')}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600,
@@ -282,10 +281,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
           child: selectedOrders.isEmpty
               ? EmptyState(
                   icon: Icons.event_busy,
-                  title: 'No Orders',
+                  title: AppStrings.trWatch(context, 'noOrders'),
                   message: _selectedDay != null
-                      ? 'No orders scheduled for this date.'
-                      : 'Select a date to view orders.',
+                      ? AppStrings.trWatch(context, 'noOrdersScheduled')
+                      : AppStrings.trWatch(context, 'selectDateToView'),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -323,6 +322,8 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<SettingsProvider>();
+    
     return AnimatedCard(
       onTap: onTap,
       child: Column(
@@ -352,7 +353,9 @@ class _OrderCard extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  order.pickupDate != null ? 'Scheduled' : 'New',
+                  order.pickupDate != null
+                      ? AppStrings.trWatch(context, 'scheduled')
+                      : AppStrings.trWatch(context, 'new'),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: order.pickupDate != null
                         ? AppColors.success
@@ -387,7 +390,7 @@ class _OrderCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Pickup: ${_formatDate(order.pickupDate!)}',
+                  '${AppStrings.trWatch(context, 'pickup')}: ${_formatDate(order.pickupDate!)}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.mutedForeground,
                   ),
@@ -402,7 +405,7 @@ class _OrderCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${order.itemCount} items',
+                '${order.itemCount} ${AppStrings.trWatch(context, 'items')}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.mutedForeground,
                 ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/settings_provider.dart';
 
 class AppStrings {
   static final Map<String, Map<String, String>> _strings = {
@@ -13,6 +15,11 @@ class AppStrings {
       'switchToCardView': 'Switch to Card View',
       'noProducts': 'No Products',
       'noProductsAvailable': 'No products available at the moment.',
+      'failedToLoadProduct': 'Failed to load product',
+      'goBack': 'Go Back',
+      'productId': 'Product ID',
+      'created': 'Created',
+      'addToOrder': 'Add to Order',
 
       // Orders Screen
       'newOrder': 'New Order',
@@ -20,18 +27,53 @@ class AppStrings {
       'switchToListViewOrder': 'Switch to List View',
       'noOrders': 'No Orders',
       'noOrdersAvailable': 'No orders available at the moment.',
+      'createFirstOrder': 'Create your first order to get started.',
+      'selectADate': 'Select a date',
+      'order': 'order',
+      'ordersPlural': 'orders',
+      'noOrdersScheduled': 'No orders scheduled for this date.',
+      'selectDateToView': 'Select a date to view orders.',
+      'scheduled': 'Scheduled',
+      'new': 'New',
+      'pickup': 'Pickup',
+      'items': 'items',
 
       // Create/Edit Order
       'createOrder': 'Create Order',
+      'editOrder': 'Edit Order',
       'customerName': 'Customer Name',
+      'enterCustomerName': 'Enter customer name',
+      'pleaseEnterCustomerName': 'Please enter customer name',
       'selectPickupDate': 'Select Pickup Date',
       'pickupDate': 'Pickup Date',
+      'pickupDateOptional': 'Pickup Date (Optional)',
+      'noPickupDateSet': 'No pickup date set',
+      'clearPickupDate': 'Clear pickup date',
+      'orderNotesOptional': 'Order Notes (Optional)',
+      'orderNotesHint': 'e.g., Call when ready, Rush order',
       'selectProducts': 'Select Products',
+      'orderItems': 'Order Items',
+      'addItem': 'Add Item',
+      'noItemsAdded': 'No items added',
+      'tapAddItem': 'Tap "Add Item" to select products',
       'quantity': 'Quantity',
       'pleaseSelectAtLeastOneProduct': 'Please select at least one product',
+      'pleaseAddAtLeastOneItem': 'Please add at least one item',
       'createOrderError': 'Error creating order',
       'orderCreatedSuccessfully': 'Order created successfully',
       'orderCreationFailed': 'Failed to create order',
+      'creating': 'Creating...',
+      'saving': 'Saving...',
+      'saveChanges': 'Save Changes',
+      'addProductsBeforeOrders': 'Add products before creating orders.',
+
+      // Add Product Dialog
+      'addProduct': 'Add Product',
+      'selectProduct': 'Select Product',
+      'allProductsAdded': 'All products have been added',
+      'itemNotesOptional': 'Item Notes (Optional)',
+      'itemNotesHint': 'e.g., Extra hot, No sugar',
+      'subtotal': 'Subtotal',
 
       // Product Details
       'productDetails': 'Product Details',
@@ -42,12 +84,24 @@ class AppStrings {
 
       // Order Details
       'orderDetails': 'Order Details',
+      'orderInformation': 'Order Information',
+      'orderNotes': 'Order Notes',
       'status': 'Status',
+      'total': 'Total',
       'totalAmount': 'Total Amount',
       'printOrder': 'Print Order',
+      'printing': 'Printing...',
+      'orderSentToPrinter': 'Order sent to printer',
+      'failedToPrint': 'Failed to print',
       'loadingOrderFailed': 'Failed to load order',
       'orderPrintedSuccessfully': 'Order printed successfully',
       'orderPrintFailed': 'Failed to print order',
+      'deleteOrder': 'Delete Order',
+      'deleteOrderConfirm': 'Are you sure you want to delete this order?',
+      'failedToDelete': 'Failed to delete',
+      'orderUpdatedSuccessfully': 'Order updated successfully',
+      'failedToUpdateOrder': 'Failed to update order',
+      'failedToLoadProducts': 'Failed to load products',
 
       // Backend Configuration
       'backendConfiguration': 'Backend Configuration',
@@ -107,6 +161,11 @@ class AppStrings {
       'switchToCardView': 'Beralih ke Tampilan Kartu',
       'noProducts': 'Tidak Ada Produk',
       'noProductsAvailable': 'Tidak ada produk tersedia saat ini.',
+      'failedToLoadProduct': 'Gagal memuat produk',
+      'goBack': 'Kembali',
+      'productId': 'ID Produk',
+      'created': 'Dibuat',
+      'addToOrder': 'Tambah ke Pesanan',
 
       // Orders Screen
       'newOrder': 'Pesanan Baru',
@@ -114,18 +173,53 @@ class AppStrings {
       'switchToListViewOrder': 'Beralih ke Tampilan Daftar',
       'noOrders': 'Tidak Ada Pesanan',
       'noOrdersAvailable': 'Tidak ada pesanan tersedia saat ini.',
+      'createFirstOrder': 'Buat pesanan pertama Anda untuk memulai.',
+      'selectADate': 'Pilih tanggal',
+      'order': 'pesanan',
+      'ordersPlural': 'pesanan',
+      'noOrdersScheduled': 'Tidak ada pesanan terjadwal untuk tanggal ini.',
+      'selectDateToView': 'Pilih tanggal untuk melihat pesanan.',
+      'scheduled': 'Terjadwal',
+      'new': 'Baru',
+      'pickup': 'Pengambilan',
+      'items': 'item',
 
       // Create/Edit Order
       'createOrder': 'Buat Pesanan',
+      'editOrder': 'Edit Pesanan',
       'customerName': 'Nama Pelanggan',
+      'enterCustomerName': 'Masukkan nama pelanggan',
+      'pleaseEnterCustomerName': 'Mohon masukkan nama pelanggan',
       'selectPickupDate': 'Pilih Tanggal Pengambilan',
       'pickupDate': 'Tanggal Pengambilan',
+      'pickupDateOptional': 'Tanggal Pengambilan (Opsional)',
+      'noPickupDateSet': 'Tanggal pengambilan belum diatur',
+      'clearPickupDate': 'Hapus tanggal pengambilan',
+      'orderNotesOptional': 'Catatan Pesanan (Opsional)',
+      'orderNotesHint': 'cth., Hubungi saat siap, Pesanan cepat',
       'selectProducts': 'Pilih Produk',
+      'orderItems': 'Item Pesanan',
+      'addItem': 'Tambah Item',
+      'noItemsAdded': 'Belum ada item',
+      'tapAddItem': 'Ketuk "Tambah Item" untuk memilih produk',
       'quantity': 'Jumlah',
       'pleaseSelectAtLeastOneProduct': 'Mohon pilih setidaknya satu produk',
+      'pleaseAddAtLeastOneItem': 'Mohon tambah setidaknya satu item',
       'createOrderError': 'Kesalahan membuat pesanan',
       'orderCreatedSuccessfully': 'Pesanan berhasil dibuat',
       'orderCreationFailed': 'Gagal membuat pesanan',
+      'creating': 'Membuat...',
+      'saving': 'Menyimpan...',
+      'saveChanges': 'Simpan Perubahan',
+      'addProductsBeforeOrders': 'Tambah produk sebelum membuat pesanan.',
+
+      // Add Product Dialog
+      'addProduct': 'Tambah Produk',
+      'selectProduct': 'Pilih Produk',
+      'allProductsAdded': 'Semua produk telah ditambahkan',
+      'itemNotesOptional': 'Catatan Item (Opsional)',
+      'itemNotesHint': 'cth., Ekstra panas, Tanpa gula',
+      'subtotal': 'Subtotal',
 
       // Product Details
       'productDetails': 'Detail Produk',
@@ -136,12 +230,24 @@ class AppStrings {
 
       // Order Details
       'orderDetails': 'Detail Pesanan',
+      'orderInformation': 'Informasi Pesanan',
+      'orderNotes': 'Catatan Pesanan',
       'status': 'Status',
+      'total': 'Total',
       'totalAmount': 'Jumlah Total',
       'printOrder': 'Cetak Pesanan',
+      'printing': 'Mencetak...',
+      'orderSentToPrinter': 'Pesanan dikirim ke printer',
+      'failedToPrint': 'Gagal mencetak',
       'loadingOrderFailed': 'Gagal memuat pesanan',
       'orderPrintedSuccessfully': 'Pesanan berhasil dicetak',
       'orderPrintFailed': 'Gagal mencetak pesanan',
+      'deleteOrder': 'Hapus Pesanan',
+      'deleteOrderConfirm': 'Apakah Anda yakin ingin menghapus pesanan ini?',
+      'failedToDelete': 'Gagal menghapus',
+      'orderUpdatedSuccessfully': 'Pesanan berhasil diperbarui',
+      'failedToUpdateOrder': 'Gagal memperbarui pesanan',
+      'failedToLoadProducts': 'Gagal memuat produk',
 
       // Backend Configuration
       'backendConfiguration': 'Konfigurasi Backend',
@@ -199,128 +305,16 @@ class AppStrings {
     final lang = locale.languageCode;
     return _strings[lang]?[key] ?? _strings['en']?[key] ?? key;
   }
-}
 
-class LocalizationHelper {
-  final Locale locale;
+  /// Convenience method to get a translated string using the locale from SettingsProvider
+  static String tr(BuildContext context, String key) {
+    final locale = context.read<SettingsProvider>().locale;
+    return getString(locale, key);
+  }
 
-  LocalizationHelper(this.locale);
-
-  // App
-  String get products => AppStrings.getString(locale, 'products');
-  String get orders => AppStrings.getString(locale, 'orders');
-  String get settings => AppStrings.getString(locale, 'settings');
-
-  // Products
-  String get switchToListView =>
-      AppStrings.getString(locale, 'switchToListView');
-  String get switchToCardView =>
-      AppStrings.getString(locale, 'switchToCardView');
-  String get noProducts => AppStrings.getString(locale, 'noProducts');
-  String get noProductsAvailable =>
-      AppStrings.getString(locale, 'noProductsAvailable');
-
-  // Orders
-  String get newOrder => AppStrings.getString(locale, 'newOrder');
-  String get switchToCalendarView =>
-      AppStrings.getString(locale, 'switchToCalendarView');
-  String get switchToListViewOrder =>
-      AppStrings.getString(locale, 'switchToListViewOrder');
-  String get noOrders => AppStrings.getString(locale, 'noOrders');
-  String get noOrdersAvailable =>
-      AppStrings.getString(locale, 'noOrdersAvailable');
-
-  // Create/Edit Order
-  String get createOrder => AppStrings.getString(locale, 'createOrder');
-  String get customerName => AppStrings.getString(locale, 'customerName');
-  String get selectPickupDate =>
-      AppStrings.getString(locale, 'selectPickupDate');
-  String get pickupDate => AppStrings.getString(locale, 'pickupDate');
-  String get selectProducts => AppStrings.getString(locale, 'selectProducts');
-  String get quantity => AppStrings.getString(locale, 'quantity');
-  String get pleaseSelectAtLeastOneProduct =>
-      AppStrings.getString(locale, 'pleaseSelectAtLeastOneProduct');
-  String get createOrderError =>
-      AppStrings.getString(locale, 'createOrderError');
-  String get orderCreatedSuccessfully =>
-      AppStrings.getString(locale, 'orderCreatedSuccessfully');
-  String get orderCreationFailed =>
-      AppStrings.getString(locale, 'orderCreationFailed');
-
-  // Product Details
-  String get productDetails => AppStrings.getString(locale, 'productDetails');
-  String get price => AppStrings.getString(locale, 'price');
-  String get stock => AppStrings.getString(locale, 'stock');
-  String get description => AppStrings.getString(locale, 'description');
-  String get loadingProductFailed =>
-      AppStrings.getString(locale, 'loadingProductFailed');
-
-  // Order Details
-  String get orderDetails => AppStrings.getString(locale, 'orderDetails');
-  String get status => AppStrings.getString(locale, 'status');
-  String get totalAmount => AppStrings.getString(locale, 'totalAmount');
-  String get printOrder => AppStrings.getString(locale, 'printOrder');
-  String get loadingOrderFailed =>
-      AppStrings.getString(locale, 'loadingOrderFailed');
-  String get orderPrintedSuccessfully =>
-      AppStrings.getString(locale, 'orderPrintedSuccessfully');
-  String get orderPrintFailed =>
-      AppStrings.getString(locale, 'orderPrintFailed');
-
-  // Backend Configuration
-  String get backendConfiguration =>
-      AppStrings.getString(locale, 'backendConfiguration');
-  String get backendConfigurationDesc =>
-      AppStrings.getString(locale, 'backendConfigurationDesc');
-  String get serverUrl => AppStrings.getString(locale, 'serverUrl');
-  String get backendUrl => AppStrings.getString(locale, 'backendUrl');
-  String get backendUrlHint => AppStrings.getString(locale, 'backendUrlHint');
-  String get pleaseEnterBackendUrl =>
-      AppStrings.getString(locale, 'pleaseEnterBackendUrl');
-  String get urlMustStartWithHttp =>
-      AppStrings.getString(locale, 'urlMustStartWithHttp');
-  String get testConnection => AppStrings.getString(locale, 'testConnection');
-  String get testing => AppStrings.getString(locale, 'testing');
-
-  // Common
-  String get save => AppStrings.getString(locale, 'save');
-  String get cancel => AppStrings.getString(locale, 'cancel');
-  String get delete => AppStrings.getString(locale, 'delete');
-  String get edit => AppStrings.getString(locale, 'edit');
-  String get add => AppStrings.getString(locale, 'add');
-  String get confirm => AppStrings.getString(locale, 'confirm');
-  String get reset => AppStrings.getString(locale, 'reset');
-  String get loading => AppStrings.getString(locale, 'loading');
-  String get error => AppStrings.getString(locale, 'error');
-  String get success => AppStrings.getString(locale, 'success');
-  String get retry => AppStrings.getString(locale, 'retry');
-
-  // Messages
-  String get connectionSuccessful =>
-      AppStrings.getString(locale, 'connectionSuccessful');
-  String get connectionFailed =>
-      AppStrings.getString(locale, 'connectionFailed');
-  String get settingsSavedSuccessfully =>
-      AppStrings.getString(locale, 'settingsSavedSuccessfully');
-  String get failedToSaveSettings =>
-      AppStrings.getString(locale, 'failedToSaveSettings');
-  String get settingsResetToDefault =>
-      AppStrings.getString(locale, 'settingsResetToDefault');
-  String get failedToResetSettings =>
-      AppStrings.getString(locale, 'failedToResetSettings');
-
-  // Quick Actions & Settings
-  String get quickActions => AppStrings.getString(locale, 'quickActions');
-  String get resetToDefault => AppStrings.getString(locale, 'resetToDefault');
-  String get resetToDefaultTitle =>
-      AppStrings.getString(locale, 'resetToDefaultTitle');
-  String get resetToDefaultConfirm =>
-      AppStrings.getString(locale, 'resetToDefaultConfirm');
-  String get language => AppStrings.getString(locale, 'language');
-  String get indonesian => AppStrings.getString(locale, 'indonesian');
-  String get english => AppStrings.getString(locale, 'english');
-  String get about => AppStrings.getString(locale, 'about');
-  String get appName => AppStrings.getString(locale, 'appName');
-  String get version => AppStrings.getString(locale, 'version');
-  String get currentUrl => AppStrings.getString(locale, 'currentUrl');
+  /// Convenience method for watching locale changes (use in build methods)
+  static String trWatch(BuildContext context, String key) {
+    final locale = context.watch<SettingsProvider>().locale;
+    return getString(locale, key);
+  }
 }

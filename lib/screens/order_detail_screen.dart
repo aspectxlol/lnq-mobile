@@ -39,19 +39,21 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> _printOrder() async {
+    final settings = context.read<SettingsProvider>();
+    
     setState(() {
       _isPrinting = true;
     });
 
     try {
-      final baseUrl = context.read<SettingsProvider>().baseUrl;
+      final baseUrl = settings.baseUrl;
       final apiService = ApiService(baseUrl);
       await apiService.printOrder(widget.orderId);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Order sent to printer'),
+          SnackBar(
+            content: Text(AppStrings.tr(context, 'orderSentToPrinter')),
             backgroundColor: AppColors.success,
           ),
         );
@@ -60,7 +62,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to print: $e'),
+            content: Text('${AppStrings.tr(context, 'failedToPrint')}: $e'),
             backgroundColor: AppColors.destructive,
           ),
         );
@@ -75,22 +77,24 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> _deleteOrder() async {
+    final settings = context.read<SettingsProvider>();
+    
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Order'),
-        content: const Text('Are you sure you want to delete this order?'),
+        title: Text(AppStrings.tr(context, 'deleteOrder')),
+        content: Text(AppStrings.tr(context, 'deleteOrderConfirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.tr(context, 'cancel')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.destructive,
             ),
-            child: const Text('Delete'),
+            child: Text(AppStrings.tr(context, 'delete')),
           ),
         ],
       ),
@@ -99,7 +103,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     if (confirmed != true) return;
 
     try {
-      final baseUrl = context.read<SettingsProvider>().baseUrl;
+      final baseUrl = settings.baseUrl;
       final apiService = ApiService(baseUrl);
       await apiService.deleteOrder(widget.orderId);
 
@@ -110,7 +114,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to delete: $e'),
+            content: Text('${AppStrings.tr(context, 'failedToDelete')}: $e'),
             backgroundColor: AppColors.destructive,
           ),
         );
@@ -125,8 +129,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
 
     if (result != null && mounted) {
+      final settings = context.read<SettingsProvider>();
+      
       try {
-        final baseUrl = context.read<SettingsProvider>().baseUrl;
+        final baseUrl = settings.baseUrl;
         final apiService = ApiService(baseUrl);
 
         await apiService.updateOrder(
@@ -141,8 +147,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Order updated successfully'),
+            SnackBar(
+              content: Text(AppStrings.tr(context, 'orderUpdatedSuccessfully')),
               backgroundColor: AppColors.success,
             ),
           );
@@ -151,7 +157,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to update order: $e'),
+              content: Text(
+                '${AppStrings.tr(context, 'failedToUpdateOrder')}: $e',
+              ),
               backgroundColor: AppColors.destructive,
             ),
           );
@@ -162,9 +170,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<SettingsProvider>();
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Order Details'),
+        title: Text(AppStrings.trWatch(context, 'orderDetails')),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -200,7 +210,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Failed to load order',
+                      AppStrings.trWatch(context, 'loadingOrderFailed'),
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     const SizedBox(height: 12),
@@ -214,7 +224,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     const SizedBox(height: 32),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Go Back'),
+                      child: Text(AppStrings.trWatch(context, 'goBack')),
                     ),
                   ],
                 ),
@@ -286,20 +296,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Order Information',
+                      AppStrings.trWatch(context, 'orderInformation'),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 16),
                     _InfoRow(
-                      label: 'Status',
-                      value: order.pickupDate != null ? 'Scheduled' : 'New',
+                      label: AppStrings.trWatch(context, 'status'),
+                      value: order.pickupDate != null
+                          ? AppStrings.trWatch(context, 'scheduled')
+                          : AppStrings.trWatch(context, 'newStatus'),
                       valueColor: order.pickupDate != null
                           ? AppColors.success
                           : null,
                     ),
                     const Divider(height: 24),
                     _InfoRow(
-                      label: 'Created',
+                      label: AppStrings.trWatch(context, 'created'),
                       value: _formatDateTime(order.createdAt),
                     ),
                     if (order.notes != null && order.notes!.isNotEmpty) ...[
@@ -308,7 +320,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Order Notes',
+                            AppStrings.trWatch(context, 'orderNotes'),
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: AppColors.mutedForeground),
                           ),
@@ -324,7 +336,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     if (order.pickupDate != null) ...[
                       const Divider(height: 24),
                       _InfoRow(
-                        label: 'Pickup Date',
+                        label: AppStrings.trWatch(context, 'pickupDate'),
                         value: _formatDate(order.pickupDate!),
                       ),
                     ],
@@ -340,7 +352,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Order Items',
+                      AppStrings.trWatch(context, 'orderItems'),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 16),
@@ -359,7 +371,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Total',
+                          AppStrings.trWatch(context, 'total'),
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
@@ -392,7 +404,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         ),
                       )
                     : const Icon(Icons.print),
-                label: Text(_isPrinting ? 'Printing...' : 'Print Order'),
+                label: Text(_isPrinting ? AppStrings.trWatch(context, 'printing') : AppStrings.trWatch(context, 'printOrder')),
               ),
             ),
             const SizedBox(height: 16),
@@ -405,7 +417,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   foregroundColor: AppColors.destructive,
                   side: const BorderSide(color: AppColors.destructive),
                 ),
-                label: const Text('Delete Order'),
+                label: Text(AppStrings.trWatch(context, 'deleteOrder')),
               ),
             ),
             const SizedBox(height: 100),
@@ -633,8 +645,8 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
 
     if (availableProducts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('All products have been added'),
+        SnackBar(
+          content: Text(AppStrings.tr(context, 'allProductsAdded')),
           backgroundColor: AppColors.primary,
         ),
       );
@@ -649,7 +661,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Add Product'),
+          title: Text(AppStrings.tr(context, 'addProduct')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -657,9 +669,9 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
               children: [
                 DropdownButtonFormField<Product>(
                   value: selectedProduct,
-                  decoration: const InputDecoration(
-                    labelText: 'Select Product',
-                    prefixIcon: Icon(Icons.shopping_bag),
+                  decoration: InputDecoration(
+                    labelText: AppStrings.tr(context, 'selectProduct'),
+                    prefixIcon: const Icon(Icons.shopping_bag),
                   ),
                   isExpanded: true,
                   items: availableProducts
@@ -698,7 +710,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                 const SizedBox(height: 24),
                 if (selectedProduct != null) ...[
                   Text(
-                    'Quantity',
+                    AppStrings.tr(context, 'quantity'),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
@@ -752,10 +764,10 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                   const SizedBox(height: 16),
                   TextField(
                     controller: notesController,
-                    decoration: const InputDecoration(
-                      labelText: 'Item Notes (Optional)',
-                      hintText: 'e.g., Extra hot, No sugar',
-                      prefixIcon: Icon(Icons.note_outlined),
+                    decoration: InputDecoration(
+                      labelText: AppStrings.tr(context, 'itemNotesOptional'),
+                      hintText: AppStrings.tr(context, 'itemNotesHint'),
+                      prefixIcon: const Icon(Icons.note_outlined),
                     ),
                     maxLines: 2,
                   ),
@@ -770,7 +782,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Subtotal:',
+                          '${AppStrings.tr(context, 'subtotal')}:',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         Text(
@@ -791,7 +803,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(AppStrings.tr(context, 'cancel')),
             ),
             ElevatedButton(
               onPressed: selectedProduct != null
@@ -809,7 +821,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                       Navigator.pop(context);
                     }
                   : null,
-              child: const Text('Add'),
+              child: Text(AppStrings.tr(context, 'add')),
             ),
           ],
         ),
@@ -833,7 +845,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Quantity',
+                  AppStrings.tr(context, 'quantity'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 12),
@@ -887,10 +899,10 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Item Notes (Optional)',
-                    hintText: 'e.g., Extra hot, No sugar',
-                    prefixIcon: Icon(Icons.note_outlined),
+                  decoration: InputDecoration(
+                    labelText: AppStrings.tr(context, 'itemNotesOptional'),
+                    hintText: AppStrings.tr(context, 'itemNotesHint'),
+                    prefixIcon: const Icon(Icons.note_outlined),
                   ),
                   maxLines: 2,
                 ),
@@ -905,7 +917,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Subtotal:',
+                        '${AppStrings.tr(context, 'subtotal')}:',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       Text(
@@ -925,7 +937,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(AppStrings.tr(context, 'cancel')),
             ),
             ElevatedButton(
               onPressed: () {
@@ -941,7 +953,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                 });
                 Navigator.pop(context);
               },
-              child: const Text('Save'),
+              child: Text(AppStrings.tr(context, 'save')),
             ),
           ],
         ),
@@ -969,8 +981,8 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please add at least one item'),
+        SnackBar(
+          content: Text(AppStrings.tr(context, 'pleaseAddAtLeastOneItem')),
           backgroundColor: AppColors.destructive,
         ),
       );
@@ -1009,8 +1021,10 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<SettingsProvider>();
+    
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Order'),
+      appBar: AppBar(title: Text(AppStrings.trWatch(context, 'editOrder')),
       ),
       body: FutureBuilder<List<Product>>(
         future: _productsFuture,
@@ -1033,7 +1047,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Failed to load products',
+                      AppStrings.trWatch(context, 'failedToLoadProducts'),
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     const SizedBox(height: 12),
@@ -1047,7 +1061,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                     const SizedBox(height: 32),
                     ElevatedButton(
                       onPressed: _loadProducts,
-                      child: const Text('Retry'),
+                      child: Text(AppStrings.trWatch(context, 'retry')),
                     ),
                   ],
                 ),
@@ -1069,14 +1083,14 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                       children: [
                         TextFormField(
                           controller: _customerNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Customer Name',
-                            hintText: 'Enter customer name',
-                            prefixIcon: Icon(Icons.person_outline),
+                          decoration: InputDecoration(
+                            labelText: AppStrings.trWatch(context, 'customerName'),
+                            hintText: AppStrings.trWatch(context, 'enterCustomerName'),
+                            prefixIcon: const Icon(Icons.person_outline),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter customer name';
+                              return AppStrings.trWatch(context, 'pleaseEnterCustomerName');
                             }
                             return null;
                           },
@@ -1086,10 +1100,10 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                           onTap: _selectPickupDate,
                           borderRadius: BorderRadius.circular(8),
                           child: InputDecorator(
-                            decoration: const InputDecoration(
-                              labelText: 'Pickup Date (Optional)',
-                              prefixIcon: Icon(Icons.calendar_today),
-                              suffixIcon: Icon(
+                            decoration: InputDecoration(
+                              labelText: AppStrings.trWatch(context, 'pickupDateOptional'),
+                              prefixIcon: const Icon(Icons.calendar_today),
+                              suffixIcon: const Icon(
                                 Icons.arrow_forward_ios,
                                 size: 16,
                               ),
@@ -1099,7 +1113,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                                   ? DateFormat(
                                       'MMM dd, yyyy',
                                     ).format(_pickupDate!)
-                                  : 'No pickup date set',
+                                  : AppStrings.trWatch(context, 'noPickupDateSet'),
                               style: TextStyle(
                                 color: _pickupDate != null
                                     ? AppColors.foreground
@@ -1118,17 +1132,17 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                                   _pickupDate = null;
                                 });
                               },
-                              child: const Text('Clear pickup date'),
+                              child: Text(AppStrings.trWatch(context, 'clearPickupDate')),
                             ),
                           ),
                         ],
                         const SizedBox(height: 24),
                         TextField(
                           controller: _notesController,
-                          decoration: const InputDecoration(
-                            labelText: 'Order Notes (Optional)',
-                            hintText: 'e.g., Call when ready, Rush order',
-                            prefixIcon: Icon(Icons.note_outlined),
+                          decoration: InputDecoration(
+                            labelText: AppStrings.trWatch(context, 'orderNotesOptional'),
+                            hintText: AppStrings.trWatch(context, 'orderNotesHint'),
+                            prefixIcon: const Icon(Icons.note_outlined),
                           ),
                           maxLines: 3,
                         ),
@@ -1137,13 +1151,13 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Order Items',
+                              AppStrings.trWatch(context, 'orderItems'),
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                             TextButton.icon(
                               onPressed: () => _showAddProductDialog(products),
                               icon: const Icon(Icons.add),
-                              label: const Text('Add Item'),
+                              label: Text(AppStrings.trWatch(context, 'addItem')),
                             ),
                           ],
                         ),
@@ -1162,7 +1176,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
-                                      'No items added',
+                                      AppStrings.trWatch(context, 'noItemsAdded'),
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleMedium
@@ -1172,7 +1186,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Tap "Add Item" to select products',
+                                      AppStrings.trWatch(context, 'tapAddItem'),
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodySmall
@@ -1331,7 +1345,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Total',
+                                  AppStrings.trWatch(context, 'total'),
                                   style: Theme.of(context).textTheme.bodyMedium
                                       ?.copyWith(
                                         color: AppColors.mutedForeground,
@@ -1363,7 +1377,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                                     )
                                   : const Icon(Icons.check),
                               label: Text(
-                                _isSaving ? 'Saving...' : 'Save Changes',
+                                _isSaving ? AppStrings.trWatch(context, 'saving') : AppStrings.trWatch(context, 'saveChanges'),
                               ),
                             ),
                           ],

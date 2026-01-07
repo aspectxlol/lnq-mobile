@@ -94,13 +94,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   Future<void> _createOrder(List<Product> products) async {
     if (!_formKey.currentState!.validate()) return;
-    final settings = context.read<SettingsProvider>();
-    final l10n = LocalizationHelper(settings.locale);
-    
+
     if (_selectedProducts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.pleaseSelectAtLeastOneProduct),
+          content: Text(
+            AppStrings.tr(context, 'pleaseSelectAtLeastOneProduct'),
+          ),
           backgroundColor: AppColors.destructive,
         ),
       );
@@ -133,11 +133,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       }
     } catch (e) {
       if (mounted) {
-        final settings = context.read<SettingsProvider>();
-        final l10n = LocalizationHelper(settings.locale);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${l10n.orderCreationFailed}: $e'),
+            content: Text(
+              '${AppStrings.tr(context, 'orderCreationFailed')}: $e',
+            ),
             backgroundColor: AppColors.destructive,
           ),
         );
@@ -161,6 +161,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   }
 
   void _showAddProductDialog(List<Product> products) {
+    final locale = context.read<SettingsProvider>().locale;
     Product? selectedProduct;
     int quantity = 1;
 
@@ -168,16 +169,16 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Add Product'),
+          title: Text(AppStrings.getString(locale, 'addProduct')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               DropdownButtonFormField<Product>(
                 value: selectedProduct,
-                decoration: const InputDecoration(
-                  labelText: 'Select Product',
-                  prefixIcon: Icon(Icons.shopping_bag),
+                decoration: InputDecoration(
+                  labelText: AppStrings.getString(locale, 'selectProduct'),
+                  prefixIcon: const Icon(Icons.shopping_bag),
                 ),
                 isExpanded: true,
                 items: products
@@ -217,7 +218,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               const SizedBox(height: 24),
               if (selectedProduct != null) ...[
                 Text(
-                  'Quantity',
+                  AppStrings.getString(locale, 'quantity'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 12),
@@ -279,7 +280,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Subtotal:',
+                        '${AppStrings.getString(locale, 'subtotal')}:',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       Text(
@@ -299,7 +300,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(AppStrings.getString(locale, 'cancel')),
             ),
             ElevatedButton(
               onPressed: selectedProduct != null
@@ -310,7 +311,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       Navigator.pop(context);
                     }
                   : null,
-              child: const Text('Add'),
+              child: Text(AppStrings.getString(locale, 'add')),
             ),
           ],
         ),
@@ -321,7 +322,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Order')),
+      appBar: AppBar(title: Text(AppStrings.trWatch(context, 'createOrder'))),
       body: FutureBuilder<List<Product>>(
         future: _productsFuture,
         builder: (context, snapshot) {
@@ -345,10 +346,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           final products = snapshot.data ?? [];
 
           if (products.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.shopping_bag_outlined,
-              title: 'No Products',
-              message: 'Add products before creating orders.',
+              title: AppStrings.trWatch(context, 'noProducts'),
+              message: AppStrings.trWatch(context, 'addProductsBeforeOrders'),
             );
           }
 
@@ -365,14 +366,23 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         FadeInSlide(
                           child: TextFormField(
                             controller: _customerNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Customer Name',
-                              hintText: 'Enter customer name',
-                              prefixIcon: Icon(Icons.person_outline),
+                            decoration: InputDecoration(
+                              labelText: AppStrings.trWatch(
+                                context,
+                                'customerName',
+                              ),
+                              hintText: AppStrings.trWatch(
+                                context,
+                                'enterCustomerName',
+                              ),
+                              prefixIcon: const Icon(Icons.person_outline),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter customer name';
+                                return AppStrings.trWatch(
+                                  context,
+                                  'pleaseEnterCustomerName',
+                                );
                               }
                               return null;
                             },
@@ -385,10 +395,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                             onTap: _selectPickupDate,
                             borderRadius: BorderRadius.circular(8),
                             child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'Pickup Date (Optional)',
-                                prefixIcon: Icon(Icons.calendar_today),
-                                suffixIcon: Icon(
+                              decoration: InputDecoration(
+                                labelText: AppStrings.trWatch(
+                                  context,
+                                  'pickupDateOptional',
+                                ),
+                                prefixIcon: const Icon(Icons.calendar_today),
+                                suffixIcon: const Icon(
                                   Icons.arrow_forward_ios,
                                   size: 16,
                                 ),
@@ -398,7 +411,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                     ? DateFormat(
                                         'MMM dd, yyyy',
                                       ).format(_pickupDate!)
-                                    : 'No pickup date set',
+                                    : AppStrings.trWatch(
+                                        context,
+                                        'noPickupDateSet',
+                                      ),
                                 style: TextStyle(
                                   color: _pickupDate != null
                                       ? AppColors.foreground
@@ -415,14 +431,16 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Order Items',
+                                AppStrings.trWatch(context, 'orderItems'),
                                 style: Theme.of(context).textTheme.titleLarge,
                               ),
                               TextButton.icon(
                                 onPressed: () =>
                                     _showAddProductDialog(products),
                                 icon: const Icon(Icons.add),
-                                label: const Text('Add Item'),
+                                label: Text(
+                                  AppStrings.trWatch(context, 'addItem'),
+                                ),
                               ),
                             ],
                           ),
@@ -444,7 +462,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                       ),
                                       const SizedBox(height: 16),
                                       Text(
-                                        'No items added',
+                                        AppStrings.trWatch(
+                                          context,
+                                          'noItemsAdded',
+                                        ),
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
@@ -454,7 +475,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        'Tap "Add Item" to select products',
+                                        AppStrings.trWatch(
+                                          context,
+                                          'tapAddItem',
+                                        ),
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodySmall
@@ -592,7 +616,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Total',
+                                  AppStrings.trWatch(context, 'total'),
                                   style: Theme.of(context).textTheme.bodyMedium
                                       ?.copyWith(
                                         color: AppColors.mutedForeground,
@@ -626,7 +650,12 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                     )
                                   : const Icon(Icons.check),
                               label: Text(
-                                _isCreating ? 'Creating...' : 'Create Order',
+                                _isCreating
+                                    ? AppStrings.trWatch(context, 'creating')
+                                    : AppStrings.trWatch(
+                                        context,
+                                        'createOrder',
+                                      ),
                               ),
                             ),
                           ],
