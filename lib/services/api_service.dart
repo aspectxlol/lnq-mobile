@@ -211,13 +211,28 @@ class ApiService {
     int id, {
     String? customerName,
     DateTime? pickupDate,
+    String? notes,
+    List<CreateOrderItem>? items,
   }) async {
     try {
       final body = <String, dynamic>{};
-      if (customerName != null) body['customerName'] = customerName;
+      
+      if (customerName != null && customerName.isNotEmpty) {
+        body['customerName'] = customerName;
+      }
+      
       if (pickupDate != null) {
         body['pickupDate'] =
             '${pickupDate.year.toString().padLeft(4, '0')}-${pickupDate.month.toString().padLeft(2, '0')}-${pickupDate.day.toString().padLeft(2, '0')}';
+      }
+      
+      if (notes != null && notes.isNotEmpty) {
+        body['notes'] = notes;
+      }
+
+      // If items is provided, it will replace all existing items
+      if (items != null && items.isNotEmpty) {
+        body['items'] = items.map((item) => item.toJson()).toList();
       }
 
       final response = await http.put(

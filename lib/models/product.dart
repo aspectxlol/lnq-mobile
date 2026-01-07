@@ -40,4 +40,9 @@ class Product {
   String get formattedPrice {
     return 'Rp ${(price / 1000).toStringAsFixed(0)}.000';
   }
+
+  String? getImageUrl(String baseUrl) {
+    if (imageId == null) return null;
+    return '$baseUrl/api/images/$imageId';
+  }
 }

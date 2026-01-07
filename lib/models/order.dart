@@ -5,6 +5,7 @@ class OrderItem {
   final int orderId;
   final int productId;
   final int amount;
+  final String? notes;
   final Product? product;
 
   OrderItem({
@@ -12,6 +13,7 @@ class OrderItem {
     required this.orderId,
     required this.productId,
     required this.amount,
+    this.notes,
     this.product,
   });
 
@@ -21,6 +23,7 @@ class OrderItem {
       orderId: json['orderId'] as int,
       productId: json['productId'] as int,
       amount: json['amount'] as int,
+      notes: json['notes'] as String?,
       product: json['product'] != null
           ? Product.fromJson(json['product'] as Map<String, dynamic>)
           : null,
@@ -33,7 +36,8 @@ class OrderItem {
       'orderId': orderId,
       'productId': productId,
       'amount': amount,
-      'product': product?.toJson(),
+      if (notes != null && notes!.isNotEmpty) 'notes': notes,
+      if (product != null) 'product': product!.toJson(),
     };
   }
 
@@ -44,6 +48,7 @@ class Order {
   final int id;
   final String customerName;
   final DateTime? pickupDate;
+  final String? notes;
   final DateTime createdAt;
   final List<OrderItem> items;
 
@@ -51,6 +56,7 @@ class Order {
     required this.id,
     required this.customerName,
     this.pickupDate,
+    this.notes,
     required this.createdAt,
     required this.items,
   });
@@ -62,6 +68,7 @@ class Order {
       pickupDate: json['pickupDate'] != null
           ? DateTime.parse(json['pickupDate'] as String)
           : null,
+      notes: json['notes'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       items: (json['items'] as List<dynamic>)
           .map((item) => OrderItem.fromJson(item as Map<String, dynamic>))
@@ -73,7 +80,10 @@ class Order {
     return {
       'id': id,
       'customerName': customerName,
-      'pickupDate': pickupDate?.toIso8601String(),
+      if (pickupDate != null)
+        'pickupDate':
+            '${pickupDate!.year.toString().padLeft(4, '0')}-${pickupDate!.month.toString().padLeft(2, '0')}-${pickupDate!.day.toString().padLeft(2, '0')}',
+      if (notes != null && notes!.isNotEmpty) 'notes': notes,
       'createdAt': createdAt.toIso8601String(),
       'items': items.map((item) => item.toJson()).toList(),
     };
