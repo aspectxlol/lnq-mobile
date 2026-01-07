@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/settings_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/animated_widgets.dart';
@@ -48,10 +49,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _healthStatus = 'success';
         });
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Connection successful!\nDB: ${health['db']}, MinIO: ${health['minio']}',
+              l10n.connectionSuccessful(
+                health['db'].toString(),
+                health['minio'].toString(),
+              ),
             ),
             backgroundColor: AppColors.success,
           ),
@@ -62,9 +67,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _healthStatus = 'error';
         });
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Connection failed: $e'),
+            content: Text(l10n.connectionFailed(e.toString())),
             backgroundColor: AppColors.destructive,
           ),
         );
@@ -86,18 +92,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await settings.setBaseUrl(_baseUrlController.text);
 
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Settings saved successfully'),
+          SnackBar(
+            content: Text(l10n.settingsSavedSuccessfully),
             backgroundColor: AppColors.success,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save settings: $e'),
+            content: Text(l10n.failedToSaveSettings(e.toString())),
             backgroundColor: AppColors.destructive,
           ),
         );
@@ -106,21 +114,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _resetToDefault() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reset to Default'),
-        content: const Text(
-          'Are you sure you want to reset the backend URL to default?',
+        title: Text(l10n.resetToDefaultTitle),
+        content: Text(l10n.resetToDefaultConfirm,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Reset'),
+            child: Text(l10n.reset),
           ),
         ],
       ),
@@ -137,18 +145,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
 
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Settings reset to default'),
+          SnackBar(
+            content: Text(l10n.settingsResetToDefault),
             backgroundColor: AppColors.success,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to reset settings: $e'),
+            content: Text(l10n.failedToResetSettings(e.toString())),
             backgroundColor: AppColors.destructive,
           ),
         );
@@ -158,8 +168,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settings)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -172,12 +183,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Backend Configuration',
+                      l10n.backendConfiguration,
                       style: Theme.of(context).textTheme.displaySmall,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Configure the backend server URL for the app.',
+                      l10n.backendConfigurationDesc,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.mutedForeground,
                       ),
@@ -195,15 +206,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Server URL',
+                          l10n.serverUrl,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _baseUrlController,
                           decoration: InputDecoration(
-                            labelText: 'Backend URL',
-                            hintText: 'http://localhost:3000',
+                            labelText: l10n.backendUrl,
+                            hintText: l10n.backendUrlHint,
                             prefixIcon: const Icon(Icons.link),
                             suffixIcon: _healthStatus != null
                                 ? Icon(
@@ -219,11 +230,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           keyboardType: TextInputType.url,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter backend URL';
+                              return l10n.pleaseEnterBackendUrl;
                             }
                             if (!value.startsWith('http://') &&
                                 !value.startsWith('https://')) {
-                              return 'URL must start with http:// or https://';
+                              return l10n.urlMustStartWithHttp;
                             }
                             return null;
                           },
@@ -249,7 +260,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       )
                                     : const Icon(Icons.wifi_find),
                                 label: Text(
-                                  _isTesting ? 'Testing...' : 'Test Connection',
+                                  _isTesting
+                                      ? l10n.testing
+                                      : l10n.testConnection,
                                 ),
                               ),
                             ),
@@ -258,7 +271,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: ElevatedButton.icon(
                                 onPressed: _saveSettings,
                                 icon: const Icon(Icons.save),
-                                label: const Text('Save'),
+                                label: Text(l10n.save),
                               ),
                             ),
                           ],
@@ -278,7 +291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Quick Actions',
+                          l10n.quickActions,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: 16),
@@ -287,8 +300,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             Icons.restore,
                             color: AppColors.secondary,
                           ),
-                          title: const Text('Reset to Default'),
-                          subtitle: const Text('http://localhost:3000'),
+                          title: Text(l10n.resetToDefault),
+                          subtitle: Text(l10n.backendUrlHint),
                           trailing: const Icon(
                             Icons.arrow_forward_ios,
                             size: 16,
@@ -297,6 +310,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              FadeInSlide(
+                delay: const Duration(milliseconds: 250),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.language,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 16),
+                        Consumer<SettingsProvider>(
+                          builder: (context, settings, _) {
+                            return Column(
+                              children: [
+                                RadioListTile<String>(
+                                  title: Text(l10n.indonesian),
+                                  value: 'id',
+                                  groupValue: settings.locale.languageCode,
+                                  onChanged: (value) async {
+                                    if (value != null) {
+                                      await settings.setLocale(
+                                        const Locale('id', 'ID'),
+                                      );
+                                    }
+                                  },
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                RadioListTile<String>(
+                                  title: Text(l10n.english),
+                                  value: 'en',
+                                  groupValue: settings.locale.languageCode,
+                                  onChanged: (value) async {
+                                    if (value != null) {
+                                      await settings.setLocale(
+                                        const Locale('en', 'US'),
+                                      );
+                                    }
+                                  },
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -313,16 +383,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'About',
+                          l10n.about,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: 16),
-                        _InfoRow(label: 'App Name', value: 'LNQ'),
+                        _InfoRow(label: l10n.appName, value: 'LNQ'),
                         const Divider(height: 24),
-                        _InfoRow(label: 'Version', value: '1.0.0'),
+                        _InfoRow(label: l10n.version, value: '1.0.0'),
                         const Divider(height: 24),
                         _InfoRow(
-                          label: 'Current URL',
+                          label: l10n.currentUrl,
                           value: context.watch<SettingsProvider>().baseUrl,
                         ),
                       ],
