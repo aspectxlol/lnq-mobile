@@ -6,6 +6,7 @@ import '../providers/settings_provider.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
+import '../l10n/strings.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final int productId;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../l10n/app_localizations.dart';
+import '../l10n/strings.dart';
 import '../providers/settings_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/animated_widgets.dart';
@@ -49,14 +49,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _healthStatus = 'success';
         });
-        final l10n = AppLocalizations.of(context)!;
+        final l10n = LocalizationHelper(
+          context.read<SettingsProvider>().locale,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              l10n.connectionSuccessful(
-                health['db'].toString(),
-                health['minio'].toString(),
-              ),
+              '${l10n.connectionSuccessful}\nDB: ${health['db']}, MinIO: ${health['minio']}',
             ),
             backgroundColor: AppColors.success,
           ),
@@ -67,10 +66,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _healthStatus = 'error';
         });
-        final l10n = AppLocalizations.of(context)!;
+        final l10n = LocalizationHelper(
+          context.read<SettingsProvider>().locale,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l10n.connectionFailed(e.toString())),
+            content: Text('${l10n.connectionFailed}: $e'),
             backgroundColor: AppColors.destructive,
           ),
         );
@@ -92,7 +93,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await settings.setBaseUrl(_baseUrlController.text);
 
       if (mounted) {
-        final l10n = AppLocalizations.of(context)!;
+        final l10n = LocalizationHelper(
+          context.read<SettingsProvider>().locale,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.settingsSavedSuccessfully),
@@ -102,10 +105,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        final l10n = AppLocalizations.of(context)!;
+        final l10n = LocalizationHelper(
+          context.read<SettingsProvider>().locale,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l10n.failedToSaveSettings(e.toString())),
+            content: Text('${l10n.failedToSaveSettings}: $e'),
             backgroundColor: AppColors.destructive,
           ),
         );
@@ -114,13 +119,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _resetToDefault() async {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = LocalizationHelper(context.read<SettingsProvider>().locale);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.resetToDefaultTitle),
-        content: Text(l10n.resetToDefaultConfirm,
-        ),
+        content: Text(l10n.resetToDefaultConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -145,7 +149,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
 
       if (mounted) {
-        final l10n = AppLocalizations.of(context)!;
+        final l10n = LocalizationHelper(
+          context.read<SettingsProvider>().locale,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.settingsResetToDefault),
@@ -155,10 +161,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        final l10n = AppLocalizations.of(context)!;
+        final l10n = LocalizationHelper(
+          context.read<SettingsProvider>().locale,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l10n.failedToResetSettings(e.toString())),
+            content: Text('${l10n.failedToResetSettings}: $e'),
             backgroundColor: AppColors.destructive,
           ),
         );
@@ -168,7 +176,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final settings = context.watch<SettingsProvider>();
+    final l10n = LocalizationHelper(settings.locale);
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settings)),
       body: SingleChildScrollView(
@@ -331,16 +341,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 16),
                         Consumer<SettingsProvider>(
-                          builder: (context, settings, _) {
+                          builder: (context, settingsProvider, _) {
                             return Column(
                               children: [
                                 RadioListTile<String>(
                                   title: Text(l10n.indonesian),
                                   value: 'id',
-                                  groupValue: settings.locale.languageCode,
+                                  groupValue:
+                                      settingsProvider.locale.languageCode,
                                   onChanged: (value) async {
                                     if (value != null) {
-                                      await settings.setLocale(
+                                      await settingsProvider.setLocale(
                                         const Locale('id', 'ID'),
                                       );
                                     }
@@ -352,10 +363,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 RadioListTile<String>(
                                   title: Text(l10n.english),
                                   value: 'en',
-                                  groupValue: settings.locale.languageCode,
+                                  groupValue:
+                                      settingsProvider.locale.languageCode,
                                   onChanged: (value) async {
                                     if (value != null) {
-                                      await settings.setLocale(
+                                      await settingsProvider.setLocale(
                                         const Locale('en', 'US'),
                                       );
                                     }
@@ -393,7 +405,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const Divider(height: 24),
                         _InfoRow(
                           label: l10n.currentUrl,
-                          value: context.watch<SettingsProvider>().baseUrl,
+                          value: settings.baseUrl,
                         ),
                       ],
                     ),

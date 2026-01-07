@@ -7,6 +7,7 @@ import '../widgets/skeleton_loader.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
+import '../l10n/strings.dart';
 import 'product_detail_screen.dart';
 
 enum ProductView { cards, list }
@@ -38,9 +39,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+    final l10n = LocalizationHelper(settings.locale);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Products'),
+        title: Text(l10n.products),
         actions: [
           IconButton(
             icon: Icon(
@@ -56,8 +60,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
               });
             },
             tooltip: _currentView == ProductView.cards
-                ? 'Switch to List View'
-                : 'Switch to Card View',
+                ? l10n.switchToListView
+                : l10n.switchToCardView,
           ),
         ],
       ),
@@ -81,10 +85,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
           final products = snapshot.data ?? [];
 
           if (products.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.shopping_bag_outlined,
-              title: 'No Products',
-              message: 'No products available at the moment.',
+              title: l10n.noProducts,
+              message: l10n.noProductsAvailable,
             );
           }
 

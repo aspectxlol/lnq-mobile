@@ -9,6 +9,7 @@ import '../widgets/skeleton_loader.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
+import '../l10n/strings.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   const CreateOrderScreen({super.key});
@@ -93,10 +94,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   Future<void> _createOrder(List<Product> products) async {
     if (!_formKey.currentState!.validate()) return;
+    final settings = context.read<SettingsProvider>();
+    final l10n = LocalizationHelper(settings.locale);
+    
     if (_selectedProducts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one product'),
+        SnackBar(
+          content: Text(l10n.pleaseSelectAtLeastOneProduct),
           backgroundColor: AppColors.destructive,
         ),
       );
@@ -129,9 +133,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final settings = context.read<SettingsProvider>();
+        final l10n = LocalizationHelper(settings.locale);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to create order: $e'),
+            content: Text('${l10n.orderCreationFailed}: $e'),
             backgroundColor: AppColors.destructive,
           ),
         );

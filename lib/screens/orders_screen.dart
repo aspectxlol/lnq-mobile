@@ -9,6 +9,7 @@ import '../widgets/skeleton_loader.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
+import '../l10n/strings.dart';
 import 'order_detail_screen.dart';
 import 'create_order_screen.dart';
 
@@ -44,9 +45,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+    final l10n = LocalizationHelper(settings.locale);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Orders'),
+        title: Text(l10n.orders),
         actions: [
           IconButton(
             icon: Icon(
@@ -62,8 +66,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
               });
             },
             tooltip: _currentView == OrderView.list
-                ? 'Switch to Calendar View'
-                : 'Switch to List View',
+                ? l10n.switchToCalendarView
+                : l10n.switchToListViewOrder,
           ),
         ],
       ),
@@ -80,7 +84,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.primaryForeground,
         icon: const Icon(Icons.add),
-        label: const Text('New Order'),
+        label: Text(l10n.newOrder),
       ),
       body: FutureBuilder<List<Order>>(
         future: _ordersFuture,
