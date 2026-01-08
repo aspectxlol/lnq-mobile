@@ -86,18 +86,41 @@ class ApiService {
     required int price,
     String? description,
     String? imageId,
+    List<int>? imageBytes,
+    String? imageFilename,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/products'),
-        headers: _headers,
-        body: json.encode({
-          'name': name,
-          'price': price,
-          'description': description,
-          'imageId': imageId,
-        }),
-      );
+      http.Response response;
+      if (imageBytes != null && imageFilename != null) {
+        var request = http.MultipartRequest(
+          'POST',
+          Uri.parse('$baseUrl/api/products'),
+        );
+        request.fields['name'] = name;
+        request.fields['price'] = price.toString();
+        if (description != null) request.fields['description'] = description;
+        if (imageId != null) request.fields['imageId'] = imageId;
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'image',
+            imageBytes,
+            filename: imageFilename,
+          ),
+        );
+        var streamedResponse = await request.send();
+        response = await http.Response.fromStream(streamedResponse);
+      } else {
+        response = await http.post(
+          Uri.parse('$baseUrl/api/products'),
+          headers: _headers,
+          body: json.encode({
+            'name': name,
+            'price': price,
+            'description': description,
+            'imageId': imageId,
+          }),
+        );
+      }
 
       return await _handleResponse(
         response,

@@ -19,9 +19,11 @@ class Product {
     return Product(
       id: json['id'] as int,
       name: json['name'] as String,
-      description: json['description'] as String?,
+      description: json['description'] == null
+          ? null
+          : json['description'] as String,
       price: json['price'] as int,
-      imageId: json['imageId'] as String?,
+      imageId: json['imageId'] == null ? null : json['imageId'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }

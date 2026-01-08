@@ -45,6 +45,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           }
 
           if (snapshot.hasError) {
+            String errorMsg = 'Failed to load product details';
+            final error = snapshot.error;
+            if (error is ApiException) {
+              errorMsg = error.message;
+            } else if (error is Exception) {
+              errorMsg = error.toString();
+            }
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -58,16 +65,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      AppStrings.trWatch(context, 'failedToLoadProduct'),
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      snapshot.error.toString(),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.mutedForeground,
-                      ),
+                      errorMsg,
                       textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppColors.destructive,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(

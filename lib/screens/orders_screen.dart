@@ -11,7 +11,7 @@ import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
 import 'order_detail_screen.dart';
-import 'create_order_screen.dart';
+import 'create_order_screen.dart' hide Theme;
 
 enum OrderView { list, calendar }
 
@@ -96,8 +96,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
           }
 
           if (snapshot.hasError) {
+            String errorMsg = 'Failed to load orders';
+            final error = snapshot.error;
+            if (error is ApiException) {
+              errorMsg = error.message;
+            } else if (error is Exception) {
+              errorMsg = error.toString();
+            }
             return ErrorState(
-              message: snapshot.error.toString(),
+              message: errorMsg,
               onRetry: _loadOrders,
             );
           }

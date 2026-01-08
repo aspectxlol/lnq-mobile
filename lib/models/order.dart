@@ -23,7 +23,7 @@ class OrderItem {
       orderId: json['orderId'] as int,
       productId: json['productId'] as int,
       amount: json['amount'] as int,
-      notes: json['notes'] as String?,
+      notes: json['notes'] == null ? null : json['notes'] as String,
       product: json['product'] != null
           ? Product.fromJson(json['product'] as Map<String, dynamic>)
           : null,
@@ -36,7 +36,7 @@ class OrderItem {
       'orderId': orderId,
       'productId': productId,
       'amount': amount,
-      if (notes != null && notes!.isNotEmpty) 'notes': notes,
+      'notes': notes,
       if (product != null) 'product': product!.toJson(),
     };
   }
@@ -65,10 +65,10 @@ class Order {
     return Order(
       id: json['id'] as int,
       customerName: json['customerName'] as String,
-      pickupDate: json['pickupDate'] != null
-          ? DateTime.parse(json['pickupDate'] as String)
-          : null,
-      notes: json['notes'] as String?,
+      pickupDate: json['pickupDate'] == null
+          ? null
+          : DateTime.tryParse(json['pickupDate'] as String),
+      notes: json['notes'] == null ? null : json['notes'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
       items: (json['items'] as List<dynamic>)
           .map((item) => OrderItem.fromJson(item as Map<String, dynamic>))
@@ -80,10 +80,10 @@ class Order {
     return {
       'id': id,
       'customerName': customerName,
-      if (pickupDate != null)
-        'pickupDate':
-            '${pickupDate!.year.toString().padLeft(4, '0')}-${pickupDate!.month.toString().padLeft(2, '0')}-${pickupDate!.day.toString().padLeft(2, '0')}',
-      if (notes != null && notes!.isNotEmpty) 'notes': notes,
+      'pickupDate': pickupDate == null
+          ? null
+          : '${pickupDate!.year.toString().padLeft(4, '0')}-${pickupDate!.month.toString().padLeft(2, '0')}-${pickupDate!.day.toString().padLeft(2, '0')}',
+      'notes': notes,
       'createdAt': createdAt.toIso8601String(),
       'items': items.map((item) => item.toJson()).toList(),
     };

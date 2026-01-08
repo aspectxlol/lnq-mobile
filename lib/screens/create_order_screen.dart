@@ -33,12 +33,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     _loadProducts();
   }
 
-  @override
-  void dispose() {
-    _customerNameController.dispose();
-    super.dispose();
-  }
-
   void _loadProducts() {
     final baseUrl = context.read<SettingsProvider>().baseUrl;
     final apiService = ApiService(baseUrl);
@@ -47,6 +41,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _customerNameController.dispose();
+    super.dispose();
+  }
   Future<void> _selectPickupDate() async {
     final date = await showDatePicker(
       context: context,
