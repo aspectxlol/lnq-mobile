@@ -1,4 +1,5 @@
 import 'product.dart';
+import '../utils/currency_utils.dart';
 
 class OrderItem {
   final int id;
@@ -6,6 +7,7 @@ class OrderItem {
   final int productId;
   final int amount;
   final String? notes;
+  final int? priceAtSale;
   final Product? product;
 
   OrderItem({
@@ -14,6 +16,7 @@ class OrderItem {
     required this.productId,
     required this.amount,
     this.notes,
+    this.priceAtSale,
     this.product,
   });
 
@@ -24,6 +27,9 @@ class OrderItem {
       productId: json['productId'] as int,
       amount: json['amount'] as int,
       notes: json['notes'] == null ? null : json['notes'] as String,
+      priceAtSale: json['priceAtSale'] == null
+          ? null
+          : json['priceAtSale'] as int,
       product: json['product'] != null
           ? Product.fromJson(json['product'] as Map<String, dynamic>)
           : null,
@@ -37,11 +43,16 @@ class OrderItem {
       'productId': productId,
       'amount': amount,
       'notes': notes,
+      if (priceAtSale != null) 'priceAtSale': priceAtSale,
       if (product != null) 'product': product!.toJson(),
     };
   }
 
-  int get totalPrice => (product?.price ?? 0) * amount;
+  int get totalPrice {
+    // Always use priceAtSale from OrderItem, never fallback to product.price
+    final int price = priceAtSale ?? 0;
+    return price * amount;
+  }
 }
 
 class Order {
@@ -92,7 +103,7 @@ class Order {
   int get totalAmount => items.fold(0, (sum, item) => sum + item.totalPrice);
 
   String get formattedTotal {
-    return 'Rp ${(totalAmount / 1000).toStringAsFixed(0)}.000';
+    return formatIdr(totalAmount);
   }
 
   int get itemCount => items.fold(0, (sum, item) => sum + item.amount);

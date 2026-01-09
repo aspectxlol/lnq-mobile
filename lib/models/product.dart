@@ -1,8 +1,11 @@
+import '../utils/currency_utils.dart';
+
 class Product {
   final int id;
   final String name;
   final String? description;
   final int price;
+  final int? priceAtSale;
   final String? imageId;
   final DateTime createdAt;
 
@@ -11,6 +14,7 @@ class Product {
     required this.name,
     this.description,
     required this.price,
+    this.priceAtSale,
     this.imageId,
     required this.createdAt,
   });
@@ -23,6 +27,9 @@ class Product {
           ? null
           : json['description'] as String,
       price: json['price'] as int,
+      priceAtSale: json['priceAtSale'] == null
+          ? null
+          : json['priceAtSale'] as int,
       imageId: json['imageId'] == null ? null : json['imageId'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
@@ -34,13 +41,14 @@ class Product {
       'name': name,
       'description': description,
       'price': price,
+      if (priceAtSale != null) 'priceAtSale': priceAtSale,
       'imageId': imageId,
       'createdAt': createdAt.toIso8601String(),
     };
   }
 
   String get formattedPrice {
-    return 'Rp ${(price / 1000).toStringAsFixed(0)}.000';
+    return formatIdr(price);
   }
 
   String? getImageUrl(String baseUrl) {

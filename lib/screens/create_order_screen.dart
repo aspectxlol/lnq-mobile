@@ -21,10 +21,13 @@ class CreateOrderScreen extends StatefulWidget {
 class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final _formKey = GlobalKey<FormState>();
   final _customerNameController = TextEditingController();
+  final _orderNotesController = TextEditingController();
   late Future<List<Product>> _productsFuture;
 
   DateTime? _pickupDate;
   final Map<int, int> _selectedProducts = {};
+  final Map<int, int> _customPrices = {}; // productId -> priceAtSale
+  final Map<int, String> _itemNotes = {}; // productId -> notes
   bool _isCreating = false;
 
   @override
@@ -34,7 +37,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   }
 
   void _loadProducts() {
-    final baseUrl = context.read<SettingsProvider>().baseUrl;
+    final baseUrl = Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    ).baseUrl;
     final apiService = ApiService(baseUrl);
     setState(() {
       _productsFuture = apiService.getProducts();
@@ -44,6 +50,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   @override
   void dispose() {
     _customerNameController.dispose();
+    _orderNotesController.dispose();
     super.dispose();
   }
   Future<void> _selectPickupDate() async {
@@ -92,8 +99,15 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   }
 
   Future<void> _createOrder(List<Product> products) async {
-    if (!_formKey.currentState!.validate()) return;
-
+    if (_customerNameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppStrings.tr(context, 'pleaseEnterCustomerName')),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+      return;
+    }
     if (_selectedProducts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -111,16 +125,31 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     });
 
     try {
-      final baseUrl = context.read<SettingsProvider>().baseUrl;
+      final baseUrl = Provider.of<SettingsProvider>(
+        context,
+        listen: false,
+      ).baseUrl;
       final apiService = ApiService(baseUrl);
 
       final request = CreateOrderRequest(
         customerName: _customerNameController.text,
         pickupDate: _pickupDate,
+        notes: _orderNotesController.text.trim().isEmpty
+            ? null
+            : _orderNotesController.text.trim(),
         items: _selectedProducts.entries
             .map(
-              (entry) =>
-                  CreateOrderItem(productId: entry.key, amount: entry.value),
+              (entry) {
+          int? custom = _customPrices[entry.key];
+          String? notes = _itemNotes[entry.key];
+          // Respect 0 as a valid price, fallback only if null
+          return CreateOrderItem(
+            productId: entry.key,
+            amount: entry.value,
+            priceAtSale: custom != null ? custom : null,
+            notes: notes,
+          );
+        },
             )
             .toList(),
       );
@@ -154,147 +183,213 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     int total = 0;
     for (final entry in _selectedProducts.entries) {
       final product = products.firstWhere((p) => p.id == entry.key);
-      total += product.price * entry.value;
+      final custom = _customPrices[entry.key];
+      final price = custom != null ? custom : product.price;
+      total += price * entry.value;
     }
     return total;
   }
 
   void _showAddProductDialog(List<Product> products) {
-    final locale = context.read<SettingsProvider>().locale;
+    final locale = Provider.of<SettingsProvider>(context, listen: false).locale;
     Product? selectedProduct;
     int quantity = 1;
 
+    int? customPrice;
+    final customPriceController = TextEditingController();
+    final itemNotesController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(AppStrings.getString(locale, 'addProduct')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              DropdownButtonFormField<Product>(
-                value: selectedProduct,
-                decoration: InputDecoration(
-                  labelText: AppStrings.getString(locale, 'selectProduct'),
-                  prefixIcon: const Icon(Icons.shopping_bag),
-                ),
-                isExpanded: true,
-                items: products
-                    .where((p) => !_selectedProducts.containsKey(p.id))
-                    .map(
-                      (product) => DropdownMenuItem(
-                        value: product,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                product.name,
-                                style: Theme.of(context).textTheme.bodyLarge,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Text(
-                              product.formattedPrice,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (product) {
-                  setDialogState(() {
-                    selectedProduct = product;
-                  });
-                },
-              ),
-              const SizedBox(height: 24),
-              if (selectedProduct != null) ...[
-                Text(
-                  AppStrings.getString(locale, 'quantity'),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      onPressed: quantity > 1
-                          ? () {
-                              setDialogState(() {
-                                quantity--;
-                              });
-                            }
-                          : null,
-                      icon: const Icon(Icons.remove_circle),
-                      color: AppColors.destructive,
-                      iconSize: 32,
-                    ),
-                    const SizedBox(width: 16),
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$quantity',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                color: AppColors.primaryForeground,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    IconButton(
-                      onPressed: () {
-                        setDialogState(() {
-                          quantity++;
-                        });
-                      },
-                      icon: const Icon(Icons.add_circle),
-                      color: AppColors.primary,
-                      iconSize: 32,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.accent,
-                    borderRadius: BorderRadius.circular(8),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DropdownButtonFormField<Product>(
+                  value: selectedProduct,
+                  decoration: InputDecoration(
+                    labelText: AppStrings.getString(locale, 'selectProduct'),
+                    prefixIcon: const Icon(Icons.shopping_bag),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  isExpanded: true,
+                  items: products
+                      .where((p) => !_selectedProducts.containsKey(p.id))
+                      .map(
+                        (product) => DropdownMenuItem(
+                          value: product,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  product.name,
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(
+                                _formatIdr(product.price),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (product) {
+                    setDialogState(() {
+                      selectedProduct = product;
+                      customPrice = product?.price;
+                      customPriceController.text =
+                          product != null && product.price > 0
+                          ? _formatIdr(product.price)
+                          : '';
+                    });
+                  },
+                ),
+                const SizedBox(height: 24),
+                if (selectedProduct != null) ...[
+                  Text(
+                    AppStrings.getString(locale, 'quantity'),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        '${AppStrings.getString(locale, 'subtotal')}:',
-                        style: Theme.of(context).textTheme.titleMedium,
+                      IconButton(
+                        onPressed: quantity > 1
+                            ? () {
+                                setDialogState(() {
+                                  quantity--;
+                                });
+                              }
+                            : null,
+                        icon: const Icon(Icons.remove_circle),
+                        color: AppColors.destructive,
+                        iconSize: 32,
                       ),
-                      Text(
-                        'Rp ${((selectedProduct!.price * quantity) / 1000).toStringAsFixed(0)}.000',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      const SizedBox(width: 16),
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$quantity',
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(
+                                  color: AppColors.primaryForeground,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      IconButton(
+                        onPressed: () {
+                          setDialogState(() {
+                            quantity++;
+                          });
+                        },
+                        icon: const Icon(Icons.add_circle),
+                        color: AppColors.primary,
+                        iconSize: 32,
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Price at sale (optional):',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: customPriceController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Masukkan harga custom',
+                      prefixIcon: const Icon(Icons.price_change),
+                    ),
+                    inputFormatters: [
+                      // Only allow digits, formatting handled in onChanged
+                    ],
+                    onChanged: (value) {
+                      // Remove non-digit characters
+                      String digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+                      int? parsed = int.tryParse(digits);
+                      setDialogState(() {
+                        customPrice = parsed;
+                        // Format as IDR for display, allow 0 (free)
+                        String formatted = digits.isEmpty
+                            ? ''
+                            : _formatIdr(parsed ?? 0, allowZero: true);
+                        int caret = formatted.length;
+                        customPriceController.value = TextEditingValue(
+                          text: formatted,
+                          selection: TextSelection.collapsed(offset: caret),
+                        );
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Item Notes (optional):',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: itemNotesController,
+                    decoration: InputDecoration(
+                      hintText: 'Enter notes for this item',
+                      prefixIcon: const Icon(Icons.note_alt_outlined),
+                    ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${AppStrings.getString(locale, 'subtotal')}:',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Text(
+                          _formatIdr(
+                            (customPrice != null
+                                    ? customPrice!
+                                    : selectedProduct!.price) *
+                                quantity,
+                            allowZero: true,
+                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
           actions: [
             TextButton(
@@ -306,6 +401,20 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   ? () {
                       setState(() {
                         _selectedProducts[selectedProduct!.id] = quantity;
+                        // Respect 0 as a valid custom price
+                        if (customPrice != null && customPrice! >= 0) {
+                          _customPrices[selectedProduct!.id] = customPrice!;
+                        } else {
+                          _customPrices.remove(selectedProduct!.id);
+                        }
+                        // Store item notes in a new map
+                        if (itemNotesController.text.trim().isNotEmpty) {
+                          _itemNotes[selectedProduct!.id] = itemNotesController
+                              .text
+                              .trim();
+                        } else {
+                          _itemNotes.remove(selectedProduct!.id);
+                        }
                       });
                       Navigator.pop(context);
                     }
@@ -316,6 +425,25 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         ),
       ),
     );
+  }
+
+  String _formatIdr(int value, {bool raw = false, bool allowZero = false}) {
+    if (raw) {
+      // Format as plain number for input
+      return value.toString();
+    }
+    // If allowZero is true, show 'Rp 0' for zero value
+    if (value == 0 && !allowZero) return '';
+    final str = value.toString();
+    final buffer = StringBuffer();
+    int count = 0;
+    for (int i = str.length - 1; i >= 0; i--) {
+      buffer.write(str[i]);
+      count++;
+      if (count % 3 == 0 && i != 0) buffer.write('.');
+    }
+    final formatted = buffer.toString().split('').reversed.join();
+    return 'Rp $formatted';
   }
 
   @override
@@ -385,6 +513,19 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                               }
                               return null;
                             },
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        FadeInSlide(
+                          delay: const Duration(milliseconds: 50),
+                          child: TextFormField(
+                            controller: _orderNotesController,
+                            decoration: InputDecoration(
+                              labelText: 'Order Notes (optional)',
+                              hintText: 'Enter any notes for this order',
+                              prefixIcon: const Icon(Icons.note_alt_outlined),
+                            ),
+                            maxLines: 2,
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -497,7 +638,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                               (p) => p.id == entry.key,
                             );
                             final quantity = entry.value;
-
+                            final custom = _customPrices[entry.key];
                             return FadeInSlide(
                               delay: const Duration(milliseconds: 300),
                               child: Card(
@@ -533,7 +674,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              '${product.formattedPrice} × $quantity',
+                                              '${_formatIdr(custom != null ? custom : product.price, allowZero: true)} × $quantity',
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyMedium
@@ -623,7 +764,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Rp ${(_calculateTotal(products) / 1000).toStringAsFixed(0)}.000',
+                                  _calculateTotal(products) == 0
+                                      ? 'Rp 0'
+                                      : 'Rp ${(_calculateTotal(products) / 1000).toStringAsFixed(0)}.000',
                                   style: Theme.of(context)
                                       .textTheme
                                       .displaySmall

@@ -10,6 +10,9 @@ import '../widgets/skeleton_loader.dart';
 import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
+import '../utils/currency_utils.dart';
+
+// Removed local formatIdr, using centralized version from utils/currency_utils.dart
 
 class OrderDetailScreen extends StatefulWidget {
   final int orderId;
@@ -508,7 +511,7 @@ class _OrderItemRow extends StatelessWidget {
                   ),
                   if (item.product != null)
                     Text(
-                      item.product!.formattedPrice,
+                      formatIdr(item.product!.price),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.mutedForeground,
                       ),
@@ -517,7 +520,7 @@ class _OrderItemRow extends StatelessWidget {
               ),
             ),
             Text(
-              'Rp ${(item.totalPrice / 1000).toStringAsFixed(0)}.000',
+              formatIdr(item.totalPrice),
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
@@ -692,7 +695,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                                 ),
                               ),
                               Text(
-                                product.formattedPrice,
+                                'Rp ${(product.priceAtSale != null ? product.priceAtSale! / 1000 : 0).toStringAsFixed(0)}.000',
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       color: AppColors.primary,
@@ -1254,7 +1257,10 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                                               ),
                                               const SizedBox(height: 4),
                                               Text(
-                                                '${product.formattedPrice} × ${item.amount}',
+                                                formatIdr(
+                                                      product.priceAtSale ?? 0,
+                                                    ) +
+                                                    ' × ${item.amount}',
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyMedium
@@ -1356,7 +1362,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Rp ${(_calculateTotal() / 1000).toStringAsFixed(0)}.000',
+                                  formatIdr(_calculateTotal()),
                                   style: Theme.of(context)
                                       .textTheme
                                       .displaySmall
