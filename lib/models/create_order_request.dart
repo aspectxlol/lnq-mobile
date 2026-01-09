@@ -37,7 +37,11 @@ class CreateOrderItem {
   });
 
   Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{'productId': productId, 'amount': amount};
+    final json = <String, dynamic>{
+      'productId': productId,
+      'amount': amount,
+      'itemType': 'product',
+    };
     json['notes'] = notes ?? '';
     if (priceAtSale != null) {
       json['priceAtSale'] = priceAtSale;

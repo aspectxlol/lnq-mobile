@@ -21,15 +21,20 @@ class OrderItem {
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
+    int? parseInt(dynamic val) {
+      if (val == null) return null;
+      if (val is int) return val;
+      if (val is double) return val.toInt();
+      if (val is String) return int.tryParse(val);
+      return null;
+    }
     return OrderItem(
-      id: json['id'] as int,
-      orderId: json['orderId'] as int,
-      productId: json['productId'] as int,
-      amount: json['amount'] as int,
+      id: parseInt(json['id']) ?? 0,
+      orderId: parseInt(json['orderId']) ?? 0,
+      productId: parseInt(json['productId']) ?? 0,
+      amount: parseInt(json['amount']) ?? 0,
       notes: json['notes'] == null ? null : json['notes'] as String,
-      priceAtSale: json['priceAtSale'] == null
-          ? null
-          : json['priceAtSale'] as int,
+      priceAtSale: parseInt(json['priceAtSale']),
       product: json['product'] != null
           ? Product.fromJson(json['product'] as Map<String, dynamic>)
           : null,

@@ -23,16 +23,26 @@ class OrdersScreen extends StatefulWidget {
 }
 
 class _OrdersScreenState extends State<OrdersScreen> {
+  bool _sortByPickupDate = false;
   late Future<List<Order>> _ordersFuture;
   OrderView _currentView = OrderView.list;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  String _searchQuery = '';
+  DateTimeRange? _pickupDateRange;
+  DateTimeRange? _createdDateRange;
+  String _activeDateFilter = 'createdDate'; // 'createdDate' or 'pickupDate'
 
   @override
   void initState() {
     super.initState();
     _loadOrders();
     _selectedDay = _focusedDay;
+    // Default: createdDate Jan 1 - Jan 31
+    final now = DateTime.now();
+    final janFirst = DateTime(now.year, 1, 1);
+    final janLast = DateTime(now.year, 1, 31);
+    _createdDateRange = DateTimeRange(start: janFirst, end: janLast);
   }
 
   void _loadOrders() {
@@ -46,7 +56,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   Widget build(BuildContext context) {
     context.watch<SettingsProvider>();
-    
     return Scaffold(
       appBar: AppBar(
         title: Text(AppStrings.trWatch(context, 'orders')),
@@ -69,6 +78,147 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 : AppStrings.trWatch(context, 'switchToListViewOrder'),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(120),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search by customer or order ID',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      ToggleButtons(
+                        isSelected: [
+                          _activeDateFilter == 'createdDate',
+                          _activeDateFilter == 'pickupDate',
+                        ],
+                        onPressed: (index) {
+                          setState(() {
+                            _activeDateFilter = index == 0
+                                ? 'createdDate'
+                                : 'pickupDate';
+                          });
+                        },
+                        children: const [
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: Text('Created Date'),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: Text('Pickup Date'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 8),
+                      if (_activeDateFilter == 'createdDate')
+                        TextButton.icon(
+                          icon: const Icon(Icons.date_range),
+                          label: Text(
+                            _createdDateRange == null
+                                ? 'All'
+                                : '${DateFormat('MMM d').format(_createdDateRange!.start)} - ${DateFormat('MMM d').format(_createdDateRange!.end)}',
+                          ),
+                          onPressed: () async {
+                            final now = DateTime.now();
+                            final picked = await showDateRangePicker(
+                              context: context,
+                              firstDate: DateTime(now.year - 2),
+                              lastDate: DateTime(now.year + 2),
+                              initialDateRange: _createdDateRange,
+                            );
+                            if (picked != null) {
+                              setState(() {
+                                _createdDateRange = picked;
+                              });
+                            }
+                          },
+                        ),
+                      if (_activeDateFilter == 'createdDate' &&
+                          _createdDateRange != null)
+                        IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              _createdDateRange = null;
+                            });
+                          },
+                        ),
+                      if (_activeDateFilter == 'pickupDate')
+                        TextButton.icon(
+                          icon: const Icon(Icons.date_range),
+                          label: Text(
+                            _pickupDateRange == null
+                                ? 'All'
+                                : '${DateFormat('MMM d').format(_pickupDateRange!.start)} - ${DateFormat('MMM d').format(_pickupDateRange!.end)}',
+                          ),
+                          onPressed: () async {
+                            final now = DateTime.now();
+                            final picked = await showDateRangePicker(
+                              context: context,
+                              firstDate: DateTime(now.year - 2),
+                              lastDate: DateTime(now.year + 2),
+                              initialDateRange: _pickupDateRange,
+                            );
+                            if (picked != null) {
+                              setState(() {
+                                _pickupDateRange = picked;
+                              });
+                            }
+                          },
+                        ),
+                      if (_activeDateFilter == 'pickupDate' &&
+                          _pickupDateRange != null)
+                        IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              _pickupDateRange = null;
+                            });
+                          },
+                        ),
+                      const SizedBox(width: 8),
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _sortByPickupDate,
+                            onChanged: (val) {
+                              setState(() {
+                                _sortByPickupDate = val ?? false;
+                              });
+                            },
+                          ),
+                          const Text('Sort by Pickup Date (hide past)'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
@@ -151,11 +301,58 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Widget _buildListView(List<Order> orders) {
+    // Filter orders by search and date filter
+    List<Order> filtered = orders.where((order) {
+      final matchesSearch =
+          _searchQuery.isEmpty ||
+          order.customerName.toLowerCase().contains(
+            _searchQuery.toLowerCase(),
+          ) ||
+          order.id.toString().contains(_searchQuery);
+      bool matchesDate = true;
+      if (_activeDateFilter == 'createdDate') {
+        matchesDate =
+            _createdDateRange == null ||
+            (order.createdAt.isAfter(
+                  _createdDateRange!.start.subtract(const Duration(days: 1)),
+                ) &&
+                order.createdAt.isBefore(
+                  _createdDateRange!.end.add(const Duration(days: 1)),
+                ));
+      } else if (_activeDateFilter == 'pickupDate') {
+        matchesDate =
+            _pickupDateRange == null ||
+            (order.pickupDate != null &&
+                order.pickupDate!.isAfter(
+                  _pickupDateRange!.start.subtract(const Duration(days: 1)),
+                ) &&
+                order.pickupDate!.isBefore(
+                  _pickupDateRange!.end.add(const Duration(days: 1)),
+                ));
+      }
+      bool notPast = true;
+      if (_sortByPickupDate) {
+        // Only show orders with pickupDate today or in the future
+        final now = DateTime.now();
+        notPast =
+            order.pickupDate != null &&
+            !order.pickupDate!.isBefore(DateTime(now.year, now.month, now.day));
+      }
+      return matchesSearch && matchesDate && (!_sortByPickupDate || notPast);
+    }).toList();
+    if (_sortByPickupDate) {
+      filtered.sort((a, b) {
+        if (a.pickupDate == null && b.pickupDate == null) return 0;
+        if (a.pickupDate == null) return 1;
+        if (b.pickupDate == null) return -1;
+        return a.pickupDate!.compareTo(b.pickupDate!);
+      });
+    }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: orders.length,
+      itemCount: filtered.length,
       itemBuilder: (context, index) {
-        final order = orders[index];
+        final order = filtered[index];
         return _OrderCard(
           order: order,
           onTap: () async {

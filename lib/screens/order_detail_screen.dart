@@ -253,25 +253,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         const SizedBox(height: 8),
         const SkeletonLoader(width: 120, height: 20),
         const SizedBox(height: 24),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                for (int i = 0; i < 3; i++) ...[
-                  if (i > 0) const Divider(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      SkeletonLoader(width: 100, height: 16),
-                      SkeletonLoader(width: 80, height: 16),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -295,61 +276,48 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppStrings.trWatch(context, 'orderInformation'),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
-                    _InfoRow(
-                      label: AppStrings.trWatch(context, 'status'),
-                      value: order.pickupDate != null
-                          ? AppStrings.trWatch(context, 'scheduled')
-                          : AppStrings.trWatch(context, 'newStatus'),
-                      valueColor: order.pickupDate != null
-                          ? AppColors.success
-                          : null,
-                    ),
-                    const Divider(height: 24),
-                    _InfoRow(
-                      label: AppStrings.trWatch(context, 'created'),
-                      value: _formatDateTime(order.createdAt),
-                    ),
-                    if (order.notes != null && order.notes!.isNotEmpty) ...[
-                      const Divider(height: 24),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppStrings.trWatch(context, 'orderNotes'),
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: AppColors.mutedForeground),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            order.notes!,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (order.pickupDate != null) ...[
-                      const Divider(height: 24),
-                      _InfoRow(
-                        label: AppStrings.trWatch(context, 'pickupDate'),
-                        value: _formatDate(order.pickupDate!),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+            _InfoRow(
+              label: order.pickupDate != null
+                  ? AppStrings.trWatch(context, 'scheduled')
+                  : AppStrings.trWatch(context, 'newStatus'),
+              value: order.pickupDate != null
+                  ? _formatDate(order.pickupDate!)
+                  : '',
+              valueColor: order.pickupDate != null ? AppColors.success : null,
             ),
+            const Divider(height: 24),
+            _InfoRow(
+              label: AppStrings.trWatch(context, 'created'),
+              value: _formatDateTime(order.createdAt),
+            ),
+            if (order.notes != null && order.notes!.isNotEmpty) ...[
+              const Divider(height: 24),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppStrings.trWatch(context, 'orderNotes'),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.mutedForeground,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    order.notes!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (order.pickupDate != null) ...[
+              const Divider(height: 24),
+              _InfoRow(
+                label: AppStrings.trWatch(context, 'pickupDate'),
+                value: _formatDate(order.pickupDate!),
+              ),
+            ],
             const SizedBox(height: 16),
             Card(
               child: Padding(
@@ -510,12 +478,13 @@ class _OrderItemRow extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   if (item.product != null)
-                    Text(
-                      formatIdr(item.product!.price),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.mutedForeground,
+                      Text(
+                        // Show price at sale x quantity
+                        '${formatIdr(item.priceAtSale ?? 0)} x ${item.amount}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.mutedForeground,
+                        ),
                       ),
-                    ),
                 ],
               ),
             ),
@@ -595,6 +564,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
         amount: item.amount,
         notes: item.notes,
         product: item.product,
+        priceAtSale: item.priceAtSale,
       );
     }
 
@@ -661,6 +631,8 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
 
     Product? selectedProduct;
     int quantity = 1;
+    int? customPrice;
+    final customPriceController = TextEditingController();
     final notesController = TextEditingController();
 
     showDialog(
@@ -695,7 +667,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                                 ),
                               ),
                               Text(
-                                'Rp ${(product.priceAtSale != null ? product.priceAtSale! / 1000 : 0).toStringAsFixed(0)}.000',
+                                formatIdr(product.priceAtSale ?? product.price),
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       color: AppColors.primary,
@@ -710,35 +682,18 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                   onChanged: (product) {
                     setDialogState(() {
                       selectedProduct = product;
+                      customPrice = product?.priceAtSale ?? product?.price;
+                      customPriceController.text = (customPrice ?? '').toString();
                     });
                   },
                 ),
                 const SizedBox(height: 24),
                 if (selectedProduct != null) ...[
-                  Text(
-                    AppStrings.tr(context, 'quantity'),
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      IconButton(
-                        onPressed: quantity > 1
-                            ? () {
-                                setDialogState(() {
-                                  quantity--;
-                                });
-                              }
-                            : null,
-                        icon: const Icon(Icons.remove_circle),
-                        color: AppColors.destructive,
-                        iconSize: 32,
-                      ),
-                      const SizedBox(width: 16),
                       Container(
-                        width: 60,
-                        height: 60,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
                           color: AppColors.primary,
                           borderRadius: BorderRadius.circular(30),
@@ -758,6 +713,16 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                       IconButton(
                         onPressed: () {
                           setDialogState(() {
+                            if (quantity > 1) quantity--;
+                          });
+                        },
+                        icon: const Icon(Icons.remove_circle),
+                        color: AppColors.primary,
+                        iconSize: 32,
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          setDialogState(() {
                             quantity++;
                           });
                         },
@@ -766,6 +731,32 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                         iconSize: 32,
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: customPriceController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Price at Sale',
+                      prefixIcon: const Icon(Icons.attach_money),
+                      hintText: 'Enter price at sale',
+                    ),
+                    inputFormatters: [
+                      // Optionally add a custom formatter for IDR
+                    ],
+                    onChanged: (value) {
+                      String digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+                      int? parsed = int.tryParse(digits);
+                      setDialogState(() {
+                        customPrice = parsed;
+                        customPriceController.value = customPriceController.value.copyWith(
+                          text: parsed != null ? formatIdr(parsed) : '',
+                          selection: TextSelection.collapsed(
+                            offset: formatIdr(parsed ?? 0).length,
+                          ),
+                        );
+                      });
+                    },
                   ),
                   const SizedBox(height: 16),
                   TextField(
@@ -792,7 +783,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         Text(
-                          'Rp ${((selectedProduct!.price * quantity) / 1000).toStringAsFixed(0)}.000',
+                          formatIdr((customPrice ?? 0) * quantity),
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(
                                 color: AppColors.primary,
@@ -812,8 +803,9 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
               child: Text(AppStrings.tr(context, 'cancel')),
             ),
             ElevatedButton(
-              onPressed: selectedProduct != null
-                  ? () {
+              onPressed: selectedProduct == null
+                  ? null
+                  : () {
                       setState(() {
                         _items[selectedProduct!.id] = _OrderItemData(
                           productId: selectedProduct!.id,
@@ -822,12 +814,12 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                               ? null
                               : notesController.text,
                           product: selectedProduct,
+                          priceAtSale: customPrice,
                         );
                       });
                       Navigator.pop(context);
-                    }
-                  : null,
-              child: Text(AppStrings.tr(context, 'add')),
+                    },
+              child: Text(AppStrings.tr(context, 'save')),
             ),
           ],
         ),
@@ -835,45 +827,38 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
     );
   }
 
-  void _editItem(int productId, Product product) {
-    final item = _items[productId]!;
+  void _removeItem(int productId) {
+    setState(() {
+      _items.remove(productId);
+    });
+  }
+
+  void _editItem(int productId, Product product) async {
+    final item = _items[productId];
+    if (item == null) return;
+
     int quantity = item.amount;
+    int? customPrice = item.priceAtSale ?? product.priceAtSale ?? product.price;
+    final customPriceController = TextEditingController(text: customPrice != null ? customPrice.toString() : '');
     final notesController = TextEditingController(text: item.notes ?? '');
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text('Edit ${product.name}'),
+          title: Text(AppStrings.tr(context, 'editItem')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  AppStrings.tr(context, 'quantity'),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
+                Text(product.name, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 16),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IconButton(
-                      onPressed: quantity > 1
-                          ? () {
-                              setDialogState(() {
-                                quantity--;
-                              });
-                            }
-                          : null,
-                      icon: const Icon(Icons.remove_circle),
-                      color: AppColors.destructive,
-                      iconSize: 32,
-                    ),
-                    const SizedBox(width: 16),
                     Container(
-                      width: 60,
-                      height: 60,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(30),
@@ -893,6 +878,16 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                     IconButton(
                       onPressed: () {
                         setDialogState(() {
+                          if (quantity > 1) quantity--;
+                        });
+                      },
+                      icon: const Icon(Icons.remove_circle),
+                      color: AppColors.primary,
+                      iconSize: 32,
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        setDialogState(() {
                           quantity++;
                         });
                       },
@@ -901,6 +896,29 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                       iconSize: 32,
                     ),
                   ],
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: customPriceController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Price at Sale',
+                    prefixIcon: const Icon(Icons.attach_money),
+                    hintText: 'Enter price at sale',
+                  ),
+                  onChanged: (value) {
+                    String digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+                    int? parsed = int.tryParse(digits);
+                    setDialogState(() {
+                      customPrice = parsed;
+                      customPriceController.value = customPriceController.value.copyWith(
+                        text: parsed != null ? formatIdr(parsed) : '',
+                        selection: TextSelection.collapsed(
+                          offset: formatIdr(parsed ?? 0).length,
+                        ),
+                      );
+                    });
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -927,7 +945,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       Text(
-                        'Rp ${((product.price * quantity) / 1000).toStringAsFixed(0)}.000',
+                        formatIdr((customPrice ?? 0) * quantity),
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
                               color: AppColors.primary,
@@ -951,10 +969,9 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                   _items[productId] = _OrderItemData(
                     productId: productId,
                     amount: quantity,
-                    notes: notesController.text.isEmpty
-                        ? null
-                        : notesController.text,
+                    notes: notesController.text.isEmpty ? null : notesController.text,
                     product: product,
+                    priceAtSale: customPrice,
                   );
                 });
                 Navigator.pop(context);
@@ -967,18 +984,15 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
     );
   }
 
-  void _removeItem(int productId) {
-    setState(() {
-      _items.remove(productId);
-    });
-  }
-
   int _calculateTotal() {
     int total = 0;
     for (final item in _items.values) {
-      if (item.product != null) {
-        total += item.product!.price * item.amount;
-      }
+      final price =
+          item.priceAtSale ??
+          item.product?.priceAtSale ??
+          item.product?.price ??
+          0;
+      total += price * item.amount;
     }
     return total;
   }
@@ -1006,6 +1020,10 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
               productId: item.productId,
               amount: item.amount,
               notes: item.notes,
+              priceAtSale:
+                  item.priceAtSale ??
+                  item.product?.priceAtSale ??
+                  item.product?.price,
             ),
           )
           .toList();
@@ -1258,7 +1276,7 @@ class _EditOrderScreenState extends State<_EditOrderScreen> {
                                               const SizedBox(height: 4),
                                               Text(
                                                 formatIdr(
-                                                      product.priceAtSale ?? 0,
+                                                      item.priceAtSale ?? 0,
                                                     ) +
                                                     ' × ${item.amount}',
                                                 style: Theme.of(context)
@@ -1408,11 +1426,13 @@ class _OrderItemData {
   final int amount;
   final String? notes;
   final Product? product;
+  final int? priceAtSale;
 
   _OrderItemData({
     required this.productId,
     required this.amount,
     this.notes,
     this.product,
+    this.priceAtSale,
   });
 }
