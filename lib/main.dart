@@ -27,15 +27,6 @@ class MyApp extends StatelessWidget {
       title: 'LNQ',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('id', 'ID'), // Indonesian
-        Locale('en', 'US'), // English
-      ],
       locale: locale,
       home: const MainScreen(),
     );
