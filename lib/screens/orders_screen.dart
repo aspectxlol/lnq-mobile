@@ -547,7 +547,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 96), // extra bottom padding for FAB
                 itemCount: selectedOrders.length,
                 itemBuilder: (context, index) {
                   final order = selectedOrders[index];
