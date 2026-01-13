@@ -5,6 +5,7 @@ import '../providers/settings_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
+import '../components/info_row.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -408,17 +409,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: 16),
-                        _InfoRow(
+                        InfoRow(
                           label: AppStrings.trWatch(context, 'appName'),
                           value: 'LNQ',
                         ),
                         const Divider(height: 24),
-                        _InfoRow(
+                        InfoRow(
                           label: AppStrings.trWatch(context, 'version'),
                           value: '1.0.0',
                         ),
                         const Divider(height: 24),
-                        _InfoRow(
+                        InfoRow(
                           label: AppStrings.trWatch(context, 'currentUrl'),
                           value: settings.baseUrl,
                         ),
@@ -435,35 +436,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: AppColors.mutedForeground),
-        ),
-        const SizedBox(width: 16),
-        Flexible(
-          child: Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-            textAlign: TextAlign.right,
-          ),
-        ),
-      ],
-    );
-  }
-}

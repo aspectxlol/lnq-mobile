@@ -7,6 +7,7 @@ import '../widgets/skeleton_loader.dart';
 import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
+import '../components/info_row.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final int productId;
@@ -212,12 +213,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         children: [
-                          _InfoRow(
+                          InfoRow(
                             label: AppStrings.trWatch(context, 'productId'),
                             value: '#${product.id}',
                           ),
                           const Divider(height: 24),
-                          _InfoRow(
+                          InfoRow(
                             label: AppStrings.trWatch(context, 'created'),
                             value: _formatDate(product.createdAt),
                           ),
@@ -252,30 +253,3 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: AppColors.mutedForeground),
-        ),
-        Text(
-          value,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-      ],
-    );
-  }
-}

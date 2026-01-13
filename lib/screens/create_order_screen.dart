@@ -9,6 +9,10 @@ import '../widgets/skeleton_loader.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
+import '../components/product_dropdown_item.dart';
+import '../components/quantity_selector.dart';
+import '../widgets/labeled_value_row.dart';
+import '../widgets/note_container.dart';
 import '../l10n/strings.dart';
 
 class CreateOrderScreen extends StatefulWidget {
@@ -25,9 +29,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   late Future<List<Product>> _productsFuture;
 
   DateTime? _pickupDate;
-  final Map<int, int> _selectedProducts = {};
-  final Map<int, int> _customPrices = {}; // productId -> priceAtSale
-  final Map<int, String> _itemNotes = {}; // productId -> notes
+  final List<_OrderItemData> _orderItems = []; // Unified list for both product and custom items
   bool _isCreating = false;
 
   @override
@@ -83,22 +85,23 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   void _incrementProduct(int productId) {
     setState(() {
-      _selectedProducts[productId] = (_selectedProducts[productId] ?? 0) + 1;
+      final item = _orderItems.firstWhere((item) => item.productId == productId);
+      item.amount++;
     });
   }
 
   void _decrementProduct(int productId) {
     setState(() {
-      final current = _selectedProducts[productId] ?? 0;
-      if (current > 1) {
-        _selectedProducts[productId] = current - 1;
+      final item = _orderItems.firstWhere((item) => item.productId == productId);
+      if (item.amount > 1) {
+        item.amount--;
       } else {
-        _selectedProducts.remove(productId);
+        _orderItems.removeWhere((item) => item.productId == productId);
       }
     });
   }
 
-  Future<void> _createOrder(List<Product> products) async {
+  Future<void> _createOrder() async {
     if (_customerNameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -108,7 +111,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       );
       return;
     }
-    if (_selectedProducts.isEmpty) {
+    if (_orderItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -131,27 +134,30 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       ).baseUrl;
       final apiService = ApiService(baseUrl);
 
+      final items = _orderItems.map((item) {
+        if (item.isCustom) {
+          return CustomOrderItem(
+            customName: item.customName!,
+            customPrice: item.customPrice!,
+            notes: item.notes,
+          );
+        } else {
+          return ProductOrderItem(
+            productId: item.productId!,
+            amount: item.amount,
+            notes: item.notes,
+            priceAtSale: item.priceAtSale,
+          );
+        }
+      }).toList();
+
       final request = CreateOrderRequest(
         customerName: _customerNameController.text,
         pickupDate: _pickupDate,
         notes: _orderNotesController.text.trim().isEmpty
             ? null
             : _orderNotesController.text.trim(),
-        items: _selectedProducts.entries
-            .map(
-              (entry) {
-          int? custom = _customPrices[entry.key];
-          String? notes = _itemNotes[entry.key];
-          // Respect 0 as a valid price, fallback only if null
-          return CreateOrderItem(
-            productId: entry.key,
-            amount: entry.value,
-            priceAtSale: custom != null ? custom : null,
-            notes: notes,
-          );
-        },
-            )
-            .toList(),
+        items: items,
       );
 
       await apiService.createOrder(request);
@@ -181,13 +187,81 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   int _calculateTotal(List<Product> products) {
     int total = 0;
-    for (final entry in _selectedProducts.entries) {
-      final product = products.firstWhere((p) => p.id == entry.key);
-      final custom = _customPrices[entry.key];
-      final price = custom != null ? custom : product.price;
-      total += price * entry.value;
+    for (final item in _orderItems) {
+      final product = products.firstWhere((p) => p.id == item.productId);
+      final price = item.priceAtSale ?? product.price;
+      total += price * item.amount;
     }
     return total;
+  }
+  void _showAddCustomItemDialog() {
+    final customNameController = TextEditingController();
+    final customPriceController = TextEditingController();
+    final customNotesController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Add Custom Item'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  controller: customNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Custom Item Name',
+                    prefixIcon: Icon(Icons.edit),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: customPriceController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Custom Price',
+                    prefixIcon: Icon(Icons.price_change),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: customNotesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Notes (optional)',
+                    prefixIcon: Icon(Icons.note_alt_outlined),
+                  ),
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = customNameController.text.trim();
+                final price = int.tryParse(customPriceController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+                final notes = customNotesController.text.trim();
+                if (name.isEmpty || price < 0) return;
+                setState(() {
+                  _orderItems.add(_OrderItemData.custom(
+                    customName: name,
+                    customPrice: price,
+                    notes: notes.isNotEmpty ? notes : null,
+                  ));
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showAddProductDialog(List<Product> products) {
@@ -216,29 +290,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   ),
                   isExpanded: true,
                   items: products
-                      .where((p) => !_selectedProducts.containsKey(p.id))
+                      .where((p) => !_orderItems.any((item) => item.productId == p.id))
                       .map(
                         (product) => DropdownMenuItem(
                           value: product,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  product.name,
-                                  style: Theme.of(context).textTheme.bodyLarge,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Text(
-                                _formatIdr(product.price),
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ],
+                          child: ProductDropdownItem(
+                            name: product.name,
+                            price: _formatIdr(product.price),
                           ),
                         ),
                       )
@@ -261,52 +319,20 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        onPressed: quantity > 1
-                            ? () {
-                                setDialogState(() {
-                                  quantity--;
-                                });
-                              }
-                            : null,
-                        icon: const Icon(Icons.remove_circle),
-                        color: AppColors.destructive,
-                        iconSize: 32,
-                      ),
-                      const SizedBox(width: 16),
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '$quantity',
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(
-                                  color: AppColors.primaryForeground,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      IconButton(
-                        onPressed: () {
-                          setDialogState(() {
-                            quantity++;
-                          });
-                        },
-                        icon: const Icon(Icons.add_circle),
-                        color: AppColors.primary,
-                        iconSize: 32,
-                      ),
-                    ],
+                  QuantitySelector(
+                    quantity: quantity,
+                    onDecrement: quantity > 1
+                        ? () {
+                            setDialogState(() {
+                              quantity--;
+                            });
+                          }
+                        : null,
+                    onIncrement: () {
+                      setDialogState(() {
+                        quantity++;
+                      });
+                    },
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -400,21 +426,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               onPressed: selectedProduct != null
                   ? () {
                       setState(() {
-                        _selectedProducts[selectedProduct!.id] = quantity;
-                        // Respect 0 as a valid custom price
-                        if (customPrice != null && customPrice! >= 0) {
-                          _customPrices[selectedProduct!.id] = customPrice!;
-                        } else {
-                          _customPrices.remove(selectedProduct!.id);
-                        }
-                        // Store item notes in a new map
-                        if (itemNotesController.text.trim().isNotEmpty) {
-                          _itemNotes[selectedProduct!.id] = itemNotesController
-                              .text
-                              .trim();
-                        } else {
-                          _itemNotes.remove(selectedProduct!.id);
-                        }
+                        _orderItems.add(_OrderItemData.product(
+                          productId: selectedProduct!.id,
+                          amount: quantity,
+                          priceAtSale: customPrice,
+                          notes: itemNotesController.text.trim().isNotEmpty
+                              ? itemNotesController.text.trim()
+                              : null,
+                        ));
                       });
                       Navigator.pop(context);
                     }
@@ -574,19 +593,26 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                 AppStrings.trWatch(context, 'orderItems'),
                                 style: Theme.of(context).textTheme.titleLarge,
                               ),
-                              TextButton.icon(
-                                onPressed: () =>
-                                    _showAddProductDialog(products),
-                                icon: const Icon(Icons.add),
-                                label: Text(
-                                  AppStrings.trWatch(context, 'addItem'),
-                                ),
+                              Row(
+                                children: [
+                                  TextButton.icon(
+                                    onPressed: () => _showAddProductDialog(products),
+                                    icon: const Icon(Icons.add),
+                                    label: Text(AppStrings.trWatch(context, 'addItem')),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  TextButton.icon(
+                                    onPressed: _showAddCustomItemDialog,
+                                    icon: const Icon(Icons.add_circle_outline),
+                                    label: const Text('Add Custom'),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 16),
-                        if (_selectedProducts.isEmpty)
+                        if (_orderItems.isEmpty)
                           FadeInSlide(
                             delay: const Duration(milliseconds: 300),
                             child: Card(
@@ -632,113 +658,66 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                               ),
                             ),
                           )
-                        else
-                          ..._selectedProducts.entries.map((entry) {
-                            final product = products.firstWhere(
-                              (p) => p.id == entry.key,
-                            );
-                            final quantity = entry.value;
-                            final custom = _customPrices[entry.key];
+                        else ...[
+                          ..._orderItems.map((item) {
                             return FadeInSlide(
                               delay: const Duration(milliseconds: 300),
                               child: Card(
                                 child: Padding(
                                   padding: const EdgeInsets.all(16),
-                                  child: Row(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Container(
-                                        width: 60,
-                                        height: 60,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.accent,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.shopping_bag,
-                                          color: AppColors.mutedForeground,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              product.name,
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.titleMedium,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '${_formatIdr(custom != null ? custom : product.price, allowZero: true)} × $quantity',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium
-                                                  ?.copyWith(
-                                                    color: AppColors.primary,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
                                       Row(
                                         children: [
-                                          IconButton(
-                                            onPressed: () =>
-                                                _decrementProduct(product.id),
-                                            icon: const Icon(
-                                              Icons.remove_circle,
-                                            ),
-                                            color: AppColors.destructive,
-                                          ),
                                           Container(
-                                            width: 40,
-                                            height: 40,
+                                            width: 60,
+                                            height: 60,
                                             decoration: BoxDecoration(
-                                              color: AppColors.primary,
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
+                                              color: AppColors.accent,
+                                              borderRadius: BorderRadius.circular(8),
                                             ),
-                                            child: Center(
-                                              child: Text(
-                                                '$quantity',
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .titleMedium
-                                                    ?.copyWith(
-                                                      color: AppColors
-                                                          .primaryForeground,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                              ),
+                                            child: const Icon(Icons.shopping_bag, color: AppColors.mutedForeground),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(item.customName ?? '', style: Theme.of(context).textTheme.titleMedium),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  'Rp ${item.customPrice.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}'
+                                                  ' × ${item.amount}',
+                                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          IconButton(
-                                            onPressed: () =>
-                                                _incrementProduct(product.id),
-                                            icon: const Icon(Icons.add_circle),
-                                            color: AppColors.primary,
+                                          QuantitySelector(
+                                            quantity: item.amount,
+                                            onIncrement: () => _incrementProduct(item.productId!),
+                                            onDecrement: () => _decrementProduct(item.productId!),
                                           ),
                                         ],
                                       ),
+                                      if (item.notes != null && item.notes!.isNotEmpty) ...[
+                                        const SizedBox(height: 12),
+                                        NoteContainer(note: item.notes!),
+                                      ],
                                     ],
                                   ),
                                 ),
                               ),
                             );
-                          }),
+                          }).toList(),
+                        ],
                       ],
                     ),
                   ),
                 ),
               ),
-              if (_selectedProducts.isNotEmpty)
+              if (_orderItems.isNotEmpty)
                 Container(
                   decoration: const BoxDecoration(
                     color: AppColors.card,
@@ -749,58 +728,30 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     top: false,
                     child: Column(
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  AppStrings.trWatch(context, 'total'),
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color: AppColors.mutedForeground,
-                                      ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _calculateTotal(products) == 0
-                                      ? 'Rp 0'
-                                      : 'Rp ${(_calculateTotal(products) / 1000).toStringAsFixed(0)}.000',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .displaySmall
-                                      ?.copyWith(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                              ],
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: _isCreating
-                                  ? null
-                                  : () => _createOrder(products),
-                              icon: _isCreating
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: AppColors.primaryForeground,
-                                      ),
-                                    )
-                                  : const Icon(Icons.check),
-                              label: Text(
-                                _isCreating
-                                    ? AppStrings.trWatch(context, 'creating')
-                                    : AppStrings.trWatch(
-                                        context,
-                                        'createOrder',
-                                      ),
-                              ),
-                            ),
-                          ],
+                        LabeledValueRow(
+                          label: AppStrings.trWatch(context, 'total'),
+                          value: _formatIdr(_calculateTotal(products), allowZero: true),
+                          labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.mutedForeground),
+                          valueStyle: Theme.of(context).textTheme.displaySmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _isCreating ? null : () => _createOrder(),
+                          icon: _isCreating
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primaryForeground,
+                                  ),
+                                )
+                              : const Icon(Icons.check),
+                          label: Text(
+                            _isCreating
+                                ? AppStrings.trWatch(context, 'creating')
+                                : AppStrings.trWatch(context, 'createOrder'),
+                          ),
                         ),
                       ],
                     ),
@@ -812,4 +763,106 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       ),
     );
   }
+}
+
+// --- Extracted reusable widget for product order item card ---
+class ProductOrderItemCard extends StatelessWidget {
+  final Product product;
+  final int quantity;
+  final int price;
+  final String? notes;
+  final VoidCallback onIncrement;
+  final VoidCallback onDecrement;
+
+  const ProductOrderItemCard({
+    Key? key,
+    required this.product,
+    required this.quantity,
+    required this.price,
+    this.notes,
+    required this.onIncrement,
+    required this.onDecrement,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: AppColors.accent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.shopping_bag, color: AppColors.mutedForeground),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(product.name, style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Rp ${price.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}'
+                        ' × $quantity',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                QuantitySelector(
+                  quantity: quantity,
+                  onIncrement: onIncrement,
+                  onDecrement: onDecrement,
+                ),
+              ],
+            ),
+            if (notes != null && notes!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              NoteContainer(note: notes!),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OrderItemData {
+  final bool isCustom;
+  final int? productId;
+  int amount;
+  final String? notes;
+  final Product? product;
+  final int? priceAtSale;
+  final String? customName;
+  final int? customPrice;
+
+  _OrderItemData.product({
+    required this.productId,
+    required this.amount,
+    this.notes,
+    this.product,
+    this.priceAtSale,
+  })  : isCustom = false,
+        customName = null,
+        customPrice = null;
+
+  _OrderItemData.custom({
+    required this.customName,
+    required this.customPrice,
+    this.amount = 1,
+    this.notes,
+  })  : isCustom = true,
+        productId = null,
+        product = null,
+        priceAtSale = null;
 }

@@ -23,29 +23,60 @@ class CreateOrderRequest {
   }
 }
 
-class CreateOrderItem {
+abstract class CreateOrderItem {
+  String get itemType;
+  Map<String, dynamic> toJson();
+}
+
+class ProductOrderItem extends CreateOrderItem {
+  @override
+  String get itemType => 'product';
   final int productId;
   final int amount;
   final String? notes;
   final int? priceAtSale;
 
-  CreateOrderItem({ 
+  ProductOrderItem({
     required this.productId,
     required this.amount,
     this.notes,
     this.priceAtSale,
   });
 
+  @override
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{
+      'itemType': itemType,
       'productId': productId,
       'amount': amount,
-      'itemType': 'product',
     };
-    json['notes'] = notes ?? '';
-    if (priceAtSale != null) {
-      json['priceAtSale'] = priceAtSale;
-    }
+    if (notes != null) json['notes'] = notes;
+    if (priceAtSale != null) json['priceAtSale'] = priceAtSale;
+    return json;
+  }
+}
+
+class CustomOrderItem extends CreateOrderItem {
+  @override
+  String get itemType => 'custom';
+  final String customName;
+  final int customPrice;
+  final String? notes;
+
+  CustomOrderItem({
+    required this.customName,
+    required this.customPrice,
+    this.notes,
+  });
+
+  @override
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'itemType': itemType,
+      'customName': customName,
+      'customPrice': customPrice,
+    };
+    if (notes != null) json['notes'] = notes;
     return json;
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../components/date_range_filter.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/order.dart';
 import '../services/api_service.dart';
@@ -8,6 +9,7 @@ import '../providers/settings_provider.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/animated_widgets.dart';
+import '../components/order_card.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
 import 'order_detail_screen.dart';
@@ -108,110 +110,37 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      ToggleButtons(
-                        isSelected: [
-                          _activeDateFilter == 'createdDate',
-                          _activeDateFilter == 'pickupDate',
-                        ],
-                        onPressed: (index) {
+                      Expanded(
+                        child: DateRangeFilter(
+                          activeFilter: _activeDateFilter,
+                          createdDateRange: _createdDateRange,
+                          pickupDateRange: _pickupDateRange,
+                          onFilterChanged: (filter) {
+                            setState(() {
+                              _activeDateFilter = filter;
+                            });
+                          },
+                          onCreatedDateChanged: (range) {
+                            setState(() {
+                              _createdDateRange = range;
+                            });
+                          },
+                          onPickupDateChanged: (range) {
+                            setState(() {
+                              _pickupDateRange = range;
+                            });
+                          },
+                        ),
+                      ),
+                      Checkbox(
+                        value: _sortByPickupDate,
+                        onChanged: (val) {
                           setState(() {
-                            _activeDateFilter = index == 0
-                                ? 'createdDate'
-                                : 'pickupDate';
+                            _sortByPickupDate = val ?? false;
                           });
                         },
-                        children: const [
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            child: Text('Created Date'),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            child: Text('Pickup Date'),
-                          ),
-                        ],
                       ),
-                      const SizedBox(width: 8),
-                      if (_activeDateFilter == 'createdDate')
-                        TextButton.icon(
-                          icon: const Icon(Icons.date_range),
-                          label: Text(
-                            _createdDateRange == null
-                                ? 'All'
-                                : '${DateFormat('MMM d').format(_createdDateRange!.start)} - ${DateFormat('MMM d').format(_createdDateRange!.end)}',
-                          ),
-                          onPressed: () async {
-                            final now = DateTime.now();
-                            final picked = await showDateRangePicker(
-                              context: context,
-                              firstDate: DateTime(now.year - 2),
-                              lastDate: DateTime(now.year + 2),
-                              initialDateRange: _createdDateRange,
-                            );
-                            if (picked != null) {
-                              setState(() {
-                                _createdDateRange = picked;
-                              });
-                            }
-                          },
-                        ),
-                      if (_activeDateFilter == 'createdDate' &&
-                          _createdDateRange != null)
-                        IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            setState(() {
-                              _createdDateRange = null;
-                            });
-                          },
-                        ),
-                      if (_activeDateFilter == 'pickupDate')
-                        TextButton.icon(
-                          icon: const Icon(Icons.date_range),
-                          label: Text(
-                            _pickupDateRange == null
-                                ? 'All'
-                                : '${DateFormat('MMM d').format(_pickupDateRange!.start)} - ${DateFormat('MMM d').format(_pickupDateRange!.end)}',
-                          ),
-                          onPressed: () async {
-                            final now = DateTime.now();
-                            final picked = await showDateRangePicker(
-                              context: context,
-                              firstDate: DateTime(now.year - 2),
-                              lastDate: DateTime(now.year + 2),
-                              initialDateRange: _pickupDateRange,
-                            );
-                            if (picked != null) {
-                              setState(() {
-                                _pickupDateRange = picked;
-                              });
-                            }
-                          },
-                        ),
-                      if (_activeDateFilter == 'pickupDate' &&
-                          _pickupDateRange != null)
-                        IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            setState(() {
-                              _pickupDateRange = null;
-                            });
-                          },
-                        ),
-                      const SizedBox(width: 8),
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _sortByPickupDate,
-                            onChanged: (val) {
-                              setState(() {
-                                _sortByPickupDate = val ?? false;
-                              });
-                            },
-                          ),
-                          const Text('Sort by Pickup Date (hide past)'),
-                        ],
-                      ),
+                      const Text('Sort by Pickup Date (hide past)'),
                     ],
                   ),
                 ),
@@ -220,82 +149,40 @@ class _OrdersScreenState extends State<OrdersScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      body: FutureBuilder<List<Order>>(
+        future: _ordersFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SkeletonLoader();
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const EmptyState(
+              icon: Icons.inbox,
+              title: 'No Orders',
+              message: 'No orders found for the selected criteria.',
+            );
+          }
+          final orders = snapshot.data!;
+          return _currentView == OrderView.list
+              ? _buildListView(orders)
+              : _buildCalendarView(orders);
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const CreateOrderScreen()),
+            MaterialPageRoute(
+              builder: (context) => const CreateOrderScreen(),
+            ),
           );
           if (result == true) {
             _loadOrders();
           }
         },
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.primaryForeground,
-        icon: const Icon(Icons.add),
-        label: Text(AppStrings.trWatch(context, 'newOrder')),
-      ),
-      body: FutureBuilder<List<Order>>(
-        future: _ordersFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return ListSkeleton(
-              itemCount: 5,
-              itemBuilder: (context, index) => const OrderCardSkeleton(),
-            );
-          }
-
-          if (snapshot.hasError) {
-            String errorMsg = 'Failed to load orders';
-            final error = snapshot.error;
-            if (error is ApiException) {
-              errorMsg = error.message;
-            } else if (error is Exception) {
-              errorMsg = error.toString();
-            }
-            return ErrorState(
-              message: errorMsg,
-              onRetry: _loadOrders,
-            );
-          }
-
-          final orders = snapshot.data ?? [];
-
-          if (orders.isEmpty) {
-            return EmptyState(
-              icon: Icons.receipt_long_outlined,
-              title: AppStrings.trWatch(context, 'noOrders'),
-              message: AppStrings.trWatch(context, 'createFirstOrder'),
-              action: ElevatedButton.icon(
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CreateOrderScreen(),
-                    ),
-                  );
-                  if (result == true) {
-                    _loadOrders();
-                  }
-                },
-                icon: const Icon(Icons.add),
-                label: Text(AppStrings.trWatch(context, 'createOrder')),
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              _loadOrders();
-              await _ordersFuture;
-            },
-            color: AppColors.primary,
-            backgroundColor: AppColors.card,
-            child: _currentView == OrderView.list
-                ? _buildListView(orders)
-                : _buildCalendarView(orders),
-          );
-        },
+        child: const Icon(Icons.add),
+        tooltip: AppStrings.trWatch(context, 'createOrder'),
       ),
     );
   }
@@ -353,7 +240,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       itemCount: filtered.length,
       itemBuilder: (context, index) {
         final order = filtered[index];
-        return _OrderCard(
+        return OrderCard(
           order: order,
           onTap: () async {
             final result = await Navigator.push(
@@ -495,7 +382,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   itemCount: selectedOrders.length,
                   itemBuilder: (context, index) {
                     final order = selectedOrders[index];
-                    return _OrderCard(
+                    return OrderCard(
                       order: order,
                       onTap: () async {
                         final result = await Navigator.push(
@@ -518,121 +405,3 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 }
 
-class _OrderCard extends StatelessWidget {
-  final Order order;
-  final VoidCallback onTap;
-
-  const _OrderCard({required this.order, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    context.watch<SettingsProvider>();
-    
-    return AnimatedCard(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                order.customerName,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: order.pickupDate != null
-                      ? AppColors.success.withOpacity(0.2)
-                      : AppColors.secondary.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: order.pickupDate != null
-                        ? AppColors.success
-                        : AppColors.secondary,
-                  ),
-                ),
-                child: Text(
-                  order.pickupDate != null
-                      ? AppStrings.trWatch(context, 'scheduled')
-                      : AppStrings.trWatch(context, 'new'),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: order.pickupDate != null
-                        ? AppColors.success
-                        : AppColors.secondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.receipt, size: 16, color: AppColors.mutedForeground),
-              const SizedBox(width: 8),
-              Text(
-                'Order #${order.id}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.mutedForeground,
-                ),
-              ),
-            ],
-          ),
-          if (order.pickupDate != null) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  Icons.event,
-                  size: 16,
-                  color: AppColors.mutedForeground,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${AppStrings.trWatch(context, 'pickup')}: ${_formatDate(order.pickupDate!)}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.mutedForeground,
-                  ),
-                ),
-              ],
-            ),
-          ],
-          const SizedBox(height: 12),
-          const Divider(),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${order.itemCount} ${AppStrings.trWatch(context, 'items')}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.mutedForeground,
-                ),
-              ),
-              Text(
-                order.formattedTotal,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return DateFormat('MMM dd, yyyy').format(date);
-  }
-
-  String _formatDateTime(DateTime date) {
-    return DateFormat('MMM dd, yyyy • HH:mm').format(date);
-  }
-}

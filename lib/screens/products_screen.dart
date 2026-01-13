@@ -6,6 +6,8 @@ import '../providers/settings_provider.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/animated_widgets.dart';
+import '../components/product_list_item.dart';
+import '../components/product_card.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
 import 'product_detail_screen.dart';
@@ -119,7 +121,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
       itemCount: products.length,
       itemBuilder: (context, index) {
         final product = products[index];
-        return _ProductCard(product: product);
+        return ProductCard(product: product);
       },
     );
   }
@@ -130,216 +132,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
       itemCount: products.length,
       itemBuilder: (context, index) {
         final product = products[index];
-        return _ProductListItem(product: product);
+        return ProductListItem(product: product);
       },
     );
   }
 }
 
-class _ProductListItem extends StatelessWidget {
-  final Product product;
-
-  const _ProductListItem({required this.product});
-
-  @override
-  Widget build(BuildContext context) {
-    final baseUrl = context.watch<SettingsProvider>().baseUrl;
-    final imageUrl = product.imageId != null
-        ? '$baseUrl/api/images/${product.imageId}'
-        : null;
-
-    return AnimatedCard(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProductDetailScreen(productId: product.id),
-          ),
-        );
-      },
-      child: Row(
-        children: [
-          // Product Image
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: imageUrl != null
-                ? Image.network(
-                    imageUrl,
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 80,
-                        height: 80,
-                        color: AppColors.accent,
-                        child: Icon(
-                          Icons.shopping_bag,
-                          size: 32,
-                          color: AppColors.mutedForeground,
-                        ),
-                      );
-                    },
-                  )
-                : Container(
-                    width: 80,
-                    height: 80,
-                    color: AppColors.accent,
-                    child: Icon(
-                      Icons.shopping_bag,
-                      size: 32,
-                      color: AppColors.mutedForeground,
-                    ),
-                  ),
-          ),
-          const SizedBox(width: 16),
-          // Product Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (product.description != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    product.description!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.mutedForeground,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                const SizedBox(height: 8),
-                Text(
-                  product.formattedPrice,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(Icons.chevron_right, color: AppColors.mutedForeground),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProductCard extends StatelessWidget {
-  final Product product;
-
-  const _ProductCard({required this.product});
-
-  @override
-  Widget build(BuildContext context) {
-    final baseUrl = context.watch<SettingsProvider>().baseUrl;
-    final imageUrl = product.imageId != null
-        ? '$baseUrl/api/images/${product.imageId}'
-        : null;
-
-    return Hero(
-      tag: 'product-${product.id}',
-      child: AnimatedCard(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProductDetailScreen(productId: product.id),
-            ),
-          );
-        },
-        padding: EdgeInsets.zero,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Product Image
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-              child: imageUrl != null
-                  ? Image.network(
-                      imageUrl,
-                      height: 120,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          height: 120,
-                          color: AppColors.accent,
-                          child: Center(
-                            child: Icon(
-                              Icons.shopping_bag,
-                              size: 48,
-                              color: AppColors.mutedForeground,
-                            ),
-                          ),
-                        );
-                      },
-                    )
-                  : Container(
-                      height: 120,
-                      color: AppColors.accent,
-                      child: Center(
-                        child: Icon(
-                          Icons.shopping_bag,
-                          size: 48,
-                          color: AppColors.mutedForeground,
-                        ),
-                      ),
-                    ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        product.name,
-                        style: Theme.of(context).textTheme.titleSmall,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (product.description != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        product.description!,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.mutedForeground,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    const Spacer(),
-                    Text(
-                      product.formattedPrice,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

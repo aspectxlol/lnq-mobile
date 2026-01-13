@@ -1,26 +1,52 @@
 import 'product.dart';
 import '../utils/currency_utils.dart';
 
-class OrderItem {
-  final int id;
-  final int orderId;
+abstract class OrderItem {
+  String get itemType;
+  int? get id;
+  int? get orderId;
+  String? get notes;
+  int get totalPrice;
+  int get amount;
+  factory OrderItem.fromJson(Map<String, dynamic> json) {
+    final type = json['itemType'] ?? (json['productId'] != null ? 'product' : 'custom');
+    if (type == 'custom') {
+      return CustomOrderItem.fromJson(json);
+    } else {
+      return ProductOrderItem.fromJson(json);
+    }
+  }
+  Map<String, dynamic> toJson();
+}
+
+class ProductOrderItem implements OrderItem {
+  @override
+  final String itemType = 'product';
+  @override
+  final int? id;
+  @override
+  final int? orderId;
   final int productId;
-  final int amount;
+  final int _amount;
+  @override
   final String? notes;
   final int? priceAtSale;
   final Product? product;
 
-  OrderItem({
-    required this.id,
-    required this.orderId,
+  @override
+  int get amount => _amount;
+
+  ProductOrderItem({
+    this.id,
+    this.orderId,
     required this.productId,
-    required this.amount,
+    required int amount,
     this.notes,
     this.priceAtSale,
     this.product,
-  });
+  }) : _amount = amount;
 
-  factory OrderItem.fromJson(Map<String, dynamic> json) {
+  factory ProductOrderItem.fromJson(Map<String, dynamic> json) {
     int? parseInt(dynamic val) {
       if (val == null) return null;
       if (val is int) return val;
@@ -28,9 +54,9 @@ class OrderItem {
       if (val is String) return int.tryParse(val);
       return null;
     }
-    return OrderItem(
-      id: parseInt(json['id']) ?? 0,
-      orderId: parseInt(json['orderId']) ?? 0,
+    return ProductOrderItem(
+      id: parseInt(json['id']),
+      orderId: parseInt(json['orderId']),
       productId: parseInt(json['productId']) ?? 0,
       amount: parseInt(json['amount']) ?? 0,
       notes: json['notes'] == null ? null : json['notes'] as String,
@@ -41,10 +67,12 @@ class OrderItem {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'orderId': orderId,
+      'itemType': itemType,
+      if (id != null) 'id': id,
+      if (orderId != null) 'orderId': orderId,
       'productId': productId,
       'amount': amount,
       'notes': notes,
@@ -53,11 +81,67 @@ class OrderItem {
     };
   }
 
+  @override
   int get totalPrice {
-    // Always use priceAtSale from OrderItem, never fallback to product.price
-    final int price = priceAtSale ?? 0;
+    final int price = priceAtSale ?? product?.price ?? 0;
     return price * amount;
   }
+}
+
+class CustomOrderItem implements OrderItem {
+  @override
+  final String itemType = 'custom';
+  @override
+  final int? id;
+  @override
+  final int? orderId;
+  final String customName;
+  final int customPrice;
+  @override
+  final String? notes;
+
+  @override
+  int get amount => 1;
+
+  CustomOrderItem({
+    this.id,
+    this.orderId,
+    required this.customName,
+    required this.customPrice,
+    this.notes,
+  });
+
+  factory CustomOrderItem.fromJson(Map<String, dynamic> json) {
+    int? parseInt(dynamic val) {
+      if (val == null) return null;
+      if (val is int) return val;
+      if (val is double) return val.toInt();
+      if (val is String) return int.tryParse(val);
+      return null;
+    }
+    return CustomOrderItem(
+      id: parseInt(json['id']),
+      orderId: parseInt(json['orderId']),
+      customName: json['customName'] ?? '',
+      customPrice: parseInt(json['customPrice']) ?? 0,
+      notes: json['notes'] == null ? null : json['notes'] as String,
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'itemType': itemType,
+      if (id != null) 'id': id,
+      if (orderId != null) 'orderId': orderId,
+      'customName': customName,
+      'customPrice': customPrice,
+      'notes': notes,
+    };
+  }
+
+  @override
+  int get totalPrice => customPrice;
 }
 
 class Order {
