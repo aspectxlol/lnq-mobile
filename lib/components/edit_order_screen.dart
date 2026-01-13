@@ -1,3 +1,4 @@
+import '../screens/order_detail_screen.dart';
 import 'info_row.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,38 @@ import '../theme/app_theme.dart';
 import '../utils/currency_utils.dart';
 import '../l10n/strings.dart';
 import '../widgets/note_container.dart';
+import 'dart:ui';
+
+// Move _OrderItemData definition to the top so it is available for type checks
+class _OrderItemData {
+  final bool isCustom;
+  final int? productId;
+  final int amount;
+  final String? notes;
+  final Product? product;
+  final int? priceAtSale;
+  final String? customName;
+  final int? customPrice;
+  _OrderItemData.product({
+    required this.productId,
+    required this.amount,
+    this.notes,
+    this.product,
+    this.priceAtSale,
+  })  : isCustom = false,
+        customName = null,
+        customPrice = null;
+
+  _OrderItemData.custom({
+    required this.customName,
+    required this.customPrice,
+    this.notes,
+  })  : isCustom = true,
+        productId = null,
+        amount = 1,
+        product = null,
+        priceAtSale = null;
+}
 
 class EditOrderScreen extends StatefulWidget {
   final Order order;
@@ -28,11 +61,190 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
   DateTime? _pickupDate;
   late Future<List<Product>> _productsFuture;
   bool _isSaving = false;
+  String? _errorMessage;
+
+  Future<_OrderItemData?> _showEditItemDialog(
+    BuildContext context, {
+    required List<Product> products,
+    _OrderItemData? item,
+  }) async {
+    final isCustom = item?.isCustom ?? false;
+    final TextEditingController nameController = TextEditingController(
+      text: isCustom ? item?.customName : null,
+    );
+    final TextEditingController priceController = TextEditingController(
+      text: isCustom ? (item?.customPrice?.toString() ?? '') : null,
+    );
+    final TextEditingController notesController = TextEditingController(
+      text: item?.notes ?? '',
+    );
+    int? selectedProductId = !isCustom ? item?.productId : null;
+    int amount = !isCustom ? (item?.amount ?? 1) : 1;
+    final TextEditingController priceAtSaleController = TextEditingController(
+      text: !isCustom && (item?.priceAtSale != null)
+        ? item!.priceAtSale.toString()
+        : '',
+    );
+    String formattedPriceAtSale = priceAtSaleController.text.isNotEmpty
+      ? formatIdr(int.tryParse(priceAtSaleController.text) ?? 0)
+      : '';
+    return await showDialog<_OrderItemData>(
+      context: context,
+      builder: (context) {
+        bool custom = isCustom;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(
+                custom
+                    ? AppStrings.trWatch(context, 'editCustomItem')
+                    : AppStrings.trWatch(context, 'editProductItem'),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        ChoiceChip(
+                          label: Text(AppStrings.trWatch(context, 'product')),
+                          selected: !custom,
+                          onSelected: (v) => setState(() => custom = !v),
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          label: Text(AppStrings.trWatch(context, 'custom')),
+                          selected: custom,
+                          onSelected: (v) => setState(() => custom = v),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    if (!custom) ...[
+                      DropdownButtonFormField<int>(
+                        value: selectedProductId,
+                        items: products
+                            .map(
+                              (p) => DropdownMenuItem(
+                                value: p.id,
+                                child: Text(p.name),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) => setState(() => selectedProductId = v),
+                        decoration: InputDecoration(
+                          labelText: AppStrings.trWatch(context, 'product'),
+                        ),
+                        validator: (v) => v == null ? AppStrings.trWatch(context, 'selectProduct') : null,
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        initialValue: amount.toString(),
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: AppStrings.trWatch(context, 'amount'),
+                        ),
+                        onChanged: (v) => amount = int.tryParse(v) ?? 1,
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: priceAtSaleController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: AppStrings.trWatch(context, 'priceAtSaleOptional'),
+                          prefixText: 'Rp ',
+                          helperText: formattedPriceAtSale.isNotEmpty ? formattedPriceAtSale : null,
+                        ),
+                        onChanged: (v) {
+                          setState(() {
+                            final value = int.tryParse(v) ?? 0;
+                            formattedPriceAtSale = v.isNotEmpty ? formatIdr(value) : '';
+                          });
+                        },
+                      ),
+                    ] else ...[
+                      TextFormField(
+                        controller: nameController,
+                        decoration: InputDecoration(
+                          labelText: AppStrings.trWatch(context, 'customName'),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: priceController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: AppStrings.trWatch(context, 'customPrice'),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: notesController,
+                      decoration: InputDecoration(
+                        labelText: AppStrings.trWatch(context, 'notes'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(AppStrings.trWatch(context, 'cancel')),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (custom) {
+                      final name = nameController.text.trim();
+                      final price = int.tryParse(
+                        priceController.text.trim() ?? '',
+                      );
+                      if (name.isEmpty || price == null) return;
+                      Navigator.pop(
+                        context,
+                        _OrderItemData.custom(
+                          customName: name,
+                          customPrice: price,
+                          notes: notesController.text.trim(),
+                        ),
+                      );
+                    } else {
+                      if (selectedProductId == null) return;
+                      final product = products.firstWhere(
+                        (p) => p.id == selectedProductId,
+                      );
+                      final priceAtSale = int.tryParse(
+                        priceAtSaleController.text.trim(),
+                      );
+                      Navigator.pop(
+                        context,
+                        _OrderItemData.product(
+                          productId: selectedProductId!,
+                          amount: amount,
+                          notes: notesController.text.trim(),
+                          product: product,
+                          priceAtSale: priceAtSale ?? product.price,
+                        ),
+                      );
+                    }
+                  },
+                  child: Text(AppStrings.trWatch(context, 'save')),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   void initState() {
     super.initState();
-    _customerNameController = TextEditingController(text: widget.order.customerName);
+    _customerNameController = TextEditingController(
+      text: widget.order.customerName,
+    );
     _notesController = TextEditingController(text: widget.order.notes ?? '');
     _pickupDate = widget.order.pickupDate;
     for (final item in widget.order.items) {
@@ -75,9 +287,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppStrings.get('editOrderTitle')),
-      ),
+      appBar: AppBar(title: Text(AppStrings.tr(context, 'editOrderTitle'))),
       body: FutureBuilder<List<Product>>(
         future: _productsFuture,
         builder: (context, snapshot) {
@@ -91,19 +301,28 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 80, color: AppColors.destructive),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 80,
+                      color: AppColors.destructive,
+                    ),
                     const SizedBox(height: 24),
-                    Text(AppStrings.get('failedToLoadProducts'), style: Theme.of(context).textTheme.headlineMedium),
+                    Text(
+                      AppStrings.tr(context, 'failedToLoadProducts'),
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       snapshot.error.toString(),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.mutedForeground),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.mutedForeground,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(
                       onPressed: _loadProducts,
-                      child: Text(AppStrings.get('retry')),
+                      child: Text(AppStrings.tr(context, 'retry')),
                     ),
                   ],
                 ),
@@ -111,317 +330,178 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
             );
           }
           final products = snapshot.data ?? [];
-          return Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextFormField(
-                          controller: _customerNameController,
-                          decoration: InputDecoration(
-                            labelText: AppStrings.get('customerName'),
-                            hintText: AppStrings.get('enterCustomerName'),
-                            prefixIcon: const Icon(Icons.person_outline),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return AppStrings.get('pleaseEnterCustomerName');
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        InkWell(
-                          onTap: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: _pickupDate ?? DateTime.now().add(const Duration(days: 1)),
-                              firstDate: DateTime.now(),
-                              lastDate: DateTime.now().add(const Duration(days: 365)),
-                              builder: (context, child) {
-                                return Theme(
-                                  data: Theme.of(context).copyWith(
-                                    colorScheme: const ColorScheme.light(
-                                      primary: AppColors.primary,
-                                      onPrimary: AppColors.primaryForeground,
-                                      surface: AppColors.card,
-                                      onSurface: AppColors.foreground,
-                                    ),
-                                  ),
-                                  child: child!,
-                                );
-                              },
-                            );
-                            if (date != null && mounted) {
-                              setState(() {
-                                _pickupDate = DateTime(date.year, date.month, date.day);
-                              });
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(8),
-                          child: InputDecorator(
-                            decoration: InputDecoration(
-                              labelText: AppStrings.get('pickupDateOptional'),
-                              prefixIcon: const Icon(Icons.calendar_today),
-                              suffixIcon: const Icon(Icons.arrow_forward_ios, size: 16),
-                            ),
-                            child: Text(
-                              _pickupDate != null
-                                  ? DateFormat('MMM dd, yyyy').format(_pickupDate!)
-                                  : AppStrings.get('noPickupDateSet'),
-                              style: TextStyle(
-                                color: _pickupDate != null ? AppColors.foreground : AppColors.mutedForeground,
+          final total = _items.values.fold(
+            0,
+            (sum, item) =>
+                sum +
+                ((item.priceAtSale ??
+                        item.product?.priceAtSale ??
+                        item.product?.price ??
+                        0) *
+                    item.amount),
+          );
+          return Form(
+            key: _formKey,
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Stack(
+                        children: [
+                          // Glassmorphism background
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.primary.withOpacity(0.10),
+                                  AppColors.primary.withOpacity(0.05),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
+                              border: Border.all(
+                                color: AppColors.primary.withOpacity(0.18),
+                                width: 1.5,
+                              ),
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.08),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                              child: Container(),
                             ),
                           ),
-                        ),
-                        if (_pickupDate != null) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  _pickupDate = null;
-                                });
-                              },
-                              child: Text(AppStrings.get('clearPickupDate')),
+                          Padding(
+                            padding: const EdgeInsets.all(28),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.sticky_note_2_outlined, color: AppColors.primary, size: 28),
+                                    const SizedBox(width: 8),
+                                    Text(AppStrings.get('editOrderTitle'), style: Theme.of(context).textTheme.titleLarge),
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
+                                TextFormField(
+                                  controller: _customerNameController,
+                                  decoration: InputDecoration(
+                                    labelText: AppStrings.tr(context, 'customerName'),
+                                  ),
+                                  validator: (v) => v == null || v.trim().isEmpty ? AppStrings.tr(context, 'enterCustomerName') : null,
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _notesController,
+                                  decoration: InputDecoration(
+                                    labelText: AppStrings.tr(context, 'notes'),
+                                  ),
+                                  maxLines: 2,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(AppStrings.tr(context, 'orderItems'), style: Theme.of(context).textTheme.titleMedium),
+                                const SizedBox(height: 8),
+                                ..._items.entries.map((entry) {
+                                  final item = entry.value;
+                                  return Card(
+                                    margin: const EdgeInsets.symmetric(vertical: 4),
+                                    child: ListTile(
+                                      title: Text(item.isCustom ? item.customName ?? '' : item.product?.name ?? ''),
+                                      subtitle: Text(item.isCustom
+                                          ? '${AppStrings.tr(context, 'customPrice')}: ${formatIdr(item.customPrice ?? 0)}'
+                                          : '${AppStrings.tr(context, 'amount')}: ${item.amount}  |  ${AppStrings.tr(context, 'priceAtSaleOptional')}: ${formatIdr(item.priceAtSale ?? item.product?.price ?? 0)}'),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.edit),
+                                            onPressed: () async {
+                                              final edited = await _showEditItemDialog(context, products: products, item: item);
+                                              if (edited != null) {
+                                                setState(() {
+                                                  _items[entry.key] = edited;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete),
+                                            onPressed: () {
+                                              setState(() {
+                                                _items.remove(entry.key);
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    ElevatedButton.icon(
+                                      icon: const Icon(Icons.add),
+                                      label: Text(AppStrings.tr(context, 'addItem')),
+                                      onPressed: () async {
+                                        final newItem = await _showEditItemDialog(context, products: products);
+                                        if (newItem != null) {
+                                          setState(() {
+                                            // Use a unique key for custom items
+                                            final key = newItem.isCustom ? DateTime.now().millisecondsSinceEpoch * -1 : newItem.productId!;
+                                            _items[key] = newItem;
+                                          });
+                                        }
+                                      },
+                                    ),
+                                    const Spacer(),
+                                    Text('${AppStrings.tr(context, 'total')}: ${formatIdr(total)}', style: Theme.of(context).textTheme.titleMedium),
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: _isSaving
+                                        ? null
+                                        : () async {
+                                            if (!_formKey.currentState!.validate()) return;
+                                            setState(() => _isSaving = true);
+                                            // TODO: Implement save logic here
+                                            setState(() => _isSaving = false);
+                                          },
+                                    child: _isSaving
+                                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                        : Text(AppStrings.tr(context, 'save')),
+                                  ),
+                                ),
+                                if (_errorMessage != null) ...[
+                                  const SizedBox(height: 12),
+                                  Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                                ],
+                              ],
                             ),
                           ),
                         ],
-                        const SizedBox(height: 24),
-                        TextField(
-                          controller: _notesController,
-                          decoration: InputDecoration(
-                            labelText: AppStrings.get('orderNotesOptional'),
-                            hintText: AppStrings.get('orderNotesHint'),
-                            prefixIcon: const Icon(Icons.note_outlined),
-                          ),
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 32),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(AppStrings.get('orderItems'), style: Theme.of(context).textTheme.titleLarge),
-                            TextButton.icon(
-                              onPressed: () {
-                                // TODO: Implement add item dialog
-                              },
-                              icon: const Icon(Icons.add),
-                              label: Text(AppStrings.get('addItem')),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        if (_items.isEmpty)
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: Center(
-                                child: Column(
-                                  children: [
-                                    Icon(Icons.shopping_cart_outlined, size: 48, color: AppColors.mutedForeground),
-                                    const SizedBox(height: 16),
-                                    Text(AppStrings.get('noItemsAdded'), style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.mutedForeground)),
-                                    const SizedBox(height: 8),
-                                    Text(AppStrings.get('tapAddItem'), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.mutedForeground)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          ..._items.entries.map((entry) {
-                            final item = entry.value;
-                            final product = item.product ?? products.firstWhere(
-                              (p) => p.id == item.productId,
-                              orElse: () => Product(
-                                id: item.productId ?? 0,
-                                name: 'Product #${item.productId ?? 0}',
-                                price: 0,
-                                createdAt: DateTime.now(),
-                              ),
-                            );
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 60,
-                                          height: 60,
-                                          decoration: BoxDecoration(
-                                            color: AppColors.accent,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(Icons.shopping_bag, color: AppColors.mutedForeground),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(product.name, style: Theme.of(context).textTheme.titleMedium),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                formatIdr(item.priceAtSale ?? 0) + ' × ${item.amount}',
-                                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed: () {
-                                            // TODO: Implement edit item dialog
-                                          },
-                                          icon: const Icon(Icons.edit_outlined),
-                                          color: AppColors.primary,
-                                        ),
-                                        IconButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              _items.remove(entry.key);
-                                            });
-                                          },
-                                          icon: const Icon(Icons.delete_outline),
-                                          color: AppColors.destructive,
-                                        ),
-                                      ],
-                                    ),
-                                    if (item.notes != null && item.notes!.isNotEmpty) ...[
-                                      const SizedBox(height: 12),
-                                      NoteContainer(note: item.notes!),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            );
-                          }),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              if (_items.isNotEmpty)
-                Container(
-                  decoration: const BoxDecoration(
-                    color: AppColors.card,
-                    border: Border(top: BorderSide(color: AppColors.border)),
-                  ),
-                  padding: const EdgeInsets.all(24),
-                  child: SafeArea(
-                    top: false,
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            InfoRow(
-                              label: AppStrings.get('total'),
-                              value: formatIdr(_items.values.fold(0, (sum, item) => sum + ((item.priceAtSale ?? item.product?.priceAtSale ?? item.product?.price ?? 0) * item.amount))),
-                              valueColor: AppColors.primary,
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: _isSaving ? null : () {
-                                if (!_formKey.currentState!.validate()) return;
-                                if (_items.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(AppStrings.get('pleaseAddAtLeastOneItem')),
-                                      backgroundColor: AppColors.destructive,
-                                    ),
-                                  );
-                                  return;
-                                }
-                                setState(() {
-                                  _isSaving = true;
-                                });
-                                try {
-                                  final items = _items.values.map((item) {
-                                    if (item.isCustom) {
-                                      return create_order.CustomOrderItem(
-                                        customName: item.customName ?? '',
-                                        customPrice: item.customPrice ?? 0,
-                                        notes: item.notes,
-                                      );
-                                    } else {
-                                      return create_order.ProductOrderItem(
-                                        productId: item.productId!,
-                                        amount: item.amount,
-                                        notes: item.notes,
-                                        priceAtSale: item.priceAtSale ?? item.product?.priceAtSale ?? item.product?.price,
-                                      );
-                                    }
-                                  }).toList();
-                                  Navigator.pop(context, {
-                                    'customerName': _customerNameController.text,
-                                    'pickupDate': _pickupDate,
-                                    'notes': _notesController.text.isEmpty ? null : _notesController.text,
-                                    'items': items,
-                                  });
-                                } finally {
-                                  if (mounted) {
-                                    setState(() {
-                                      _isSaving = false;
-                                    });
-                                  }
-                                }
-                              },
-                              icon: _isSaving
-                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryForeground))
-                                  : const Icon(Icons.check),
-                              label: Text(_isSaving ? AppStrings.get('saving') : AppStrings.get('saveChanges')),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
+              ],
+            ),
           );
         },
       ),
     );
   }
-}
-
-class _OrderItemData {
-  final bool isCustom;
-  final int? productId;
-  final int amount;
-  final String? notes;
-  final Product? product;
-  final int? priceAtSale;
-  final String? customName;
-  final int? customPrice;
-  _OrderItemData.product({
-    required this.productId,
-    required this.amount,
-    this.notes,
-    this.product,
-    this.priceAtSale,
-  })  : isCustom = false,
-        customName = null,
-        customPrice = null;
-
-  _OrderItemData.custom({
-    required this.customName,
-    required this.customPrice,
-    this.notes,
-  })  : isCustom = true,
-        productId = null,
-        amount = 1,
-        product = null,
-        priceAtSale = null;
 }
