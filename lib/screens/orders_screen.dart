@@ -72,7 +72,7 @@ class _SortFilterDialogState extends State<_SortFilterDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Sort & Filter', style: Theme.of(context).textTheme.titleLarge),
+              Text(AppStrings.trWatch(context, 'sortAndFilter'), style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 24),
               GestureDetector(
                 onTap: () async {
@@ -101,7 +101,7 @@ class _SortFilterDialogState extends State<_SortFilterDialog> {
                       const SizedBox(width: 8),
                       Text(
                         _pickupDateRange == null
-                            ? 'Pickup Date Range'
+                            ? AppStrings.trWatch(context, 'pickupDateRange')
                             : '${DateFormat('MMM d, yyyy').format(_pickupDateRange!.start)} - ${DateFormat('MMM d, yyyy').format(_pickupDateRange!.end)}',
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
@@ -112,14 +112,14 @@ class _SortFilterDialogState extends State<_SortFilterDialog> {
               const SizedBox(height: 20),
               DropdownButtonFormField<String>(
                 value: _sortField,
-                decoration: const InputDecoration(
-                  labelText: 'Sort By',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: AppStrings.trWatch(context, 'sortBy'),
+                  border: const OutlineInputBorder(),
                 ),
                 items: widget.sortOptions
                     .map((opt) => DropdownMenuItem<String>(
                           value: opt['value'],
-                          child: Text(opt['label']!),
+                          child: Text(AppStrings.trWatch(context, opt['label']!)),
                         ))
                     .toList(),
                 onChanged: (val) {
@@ -135,14 +135,14 @@ class _SortFilterDialogState extends State<_SortFilterDialog> {
                 children: [
                   IconButton(
                     icon: Icon(_sortAscending ? Icons.arrow_upward : Icons.arrow_downward),
-                    tooltip: _sortAscending ? 'Ascending' : 'Descending',
+                    tooltip: _sortAscending ? AppStrings.trWatch(context, 'ascending') : AppStrings.trWatch(context, 'descending'),
                     onPressed: () {
                       setState(() {
                         _sortAscending = !_sortAscending;
                       });
                     },
                   ),
-                  const Text('Sort Order'),
+                  Text(AppStrings.trWatch(context, 'sortOrder')),
                 ],
               ),
               const SizedBox(height: 12),
@@ -157,7 +157,7 @@ class _SortFilterDialogState extends State<_SortFilterDialog> {
                       });
                     },
                   ),
-                  const Text('Hide Past'),
+                  Text(AppStrings.trWatch(context, 'hidePast')),
                 ],
               ),
               const SizedBox(height: 20),
@@ -165,7 +165,7 @@ class _SortFilterDialogState extends State<_SortFilterDialog> {
                 children: [
                   TextButton.icon(
                     icon: const Icon(Icons.clear),
-                    label: const Text('Clear Filters'),
+                    label: Text(AppStrings.trWatch(context, 'clearFilters')),
                     onPressed: () {
                       setState(() {
                         _pickupDateRange = null;
@@ -181,7 +181,7 @@ class _SortFilterDialogState extends State<_SortFilterDialog> {
                       widget.onApply(_sortField, _sortAscending, _pickupDateRange, _hidePast);
                       Navigator.of(context).pop();
                     },
-                    child: const Text('Apply'),
+                    child: Text(AppStrings.trWatch(context, 'apply')),
                   ),
                 ],
               ),
@@ -204,10 +204,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
   String _searchQuery = '';
   DateTimeRange? _pickupDateRange;
   final List<Map<String, String>> _sortOptions = [
-    {'value': 'pickupDate', 'label': 'Pickup Date'},
-    {'value': 'createdAt', 'label': 'Created Date'},
-    {'value': 'customerName', 'label': 'Customer Name'},
-    {'value': 'id', 'label': 'Order ID'},
+    {'value': 'pickupDate', 'label': 'pickupDate'},
+    {'value': 'createdAt', 'label': 'created'},
+    {'value': 'customerName', 'label': 'customerName'},
+    {'value': 'id', 'label': 'orderId'},
   ];
 
   @override
@@ -264,7 +264,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
-                      hintText: 'Search by customer or order ID',
+                      hintText: AppStrings.trWatch(context, 'searchByCustomerOrOrderId'),
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -280,7 +280,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 const SizedBox(width: 12),
                 IconButton(
                   icon: const Icon(Icons.tune),
-                  tooltip: 'Sort & Filter',
+                  tooltip: AppStrings.trWatch(context, 'sortAndFilter'),
                   iconSize: 28,
                   onPressed: () async {
                     await showDialog(
@@ -315,12 +315,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const SkeletonLoader();
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text(AppStrings.trWatch(context, 'error')));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.inbox,
-              title: 'No Orders',
-              message: 'No orders found for the selected criteria.',
+              title: AppStrings.trWatch(context, 'noOrders'),
+              message: AppStrings.trWatch(context, 'noOrdersFoundForCriteria'),
             );
           }
           final orders = snapshot.data!;
