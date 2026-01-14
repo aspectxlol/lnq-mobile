@@ -4,6 +4,7 @@ import 'dart:ui';
 import '../models/order.dart';
 import '../models/product.dart';
 import '../models/order_item_data.dart';
+import '../models/create_order_request.dart' as create_order;
 import '../theme/app_theme.dart';
 import '../utils/currency_utils.dart';
 import '../utils/data_loader_extension.dart';
@@ -35,10 +36,10 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
   }) async {
     final isCustom = item?.isCustom ?? false;
     final TextEditingController nameController = TextEditingController(
-      text: isCustom ? item?.customName : null,
+      text: isCustom ? item?.customName ?? '' : '',
     );
     final TextEditingController priceController = TextEditingController(
-      text: isCustom ? (item?.customPrice?.toString() ?? '') : null,
+      text: isCustom ? (item?.customPrice?.toString() ?? '') : '',
     );
     final TextEditingController notesController = TextEditingController(
       text: item?.notes ?? '',
@@ -50,17 +51,18 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
         ? item!.priceAtSale.toString()
         : '',
     );
+    if (!mounted) return null;
     return await showDialog<OrderItemData>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         bool custom = isCustom;
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (statefulContext, setState) {
             return AlertDialog(
               title: Text(
                 custom
-                    ? AppStrings.trWatch(context, 'editCustomItem')
-                    : AppStrings.trWatch(context, 'editProductItem'),
+                    ? AppStrings.trWatch(statefulContext, 'editCustomItem')
+                    : AppStrings.trWatch(statefulContext, 'editProductItem'),
               ),
               content: SingleChildScrollView(
                 child: Column(
@@ -69,13 +71,13 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                     Row(
                       children: [
                         ChoiceChip(
-                          label: Text(AppStrings.trWatch(context, 'product')),
+                          label: Text(AppStrings.trWatch(statefulContext, 'product')),
                           selected: !custom,
                           onSelected: (v) => setState(() => custom = !v),
                         ),
                         const SizedBox(width: 8),
                         ChoiceChip(
-                          label: Text(AppStrings.trWatch(context, 'custom')),
+                          label: Text(AppStrings.trWatch(statefulContext, 'custom')),
                           selected: custom,
                           onSelected: (v) => setState(() => custom = v),
                         ),
@@ -95,36 +97,36 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                             .toList(),
                         onChanged: (v) => setState(() => selectedProductId = v),
                         decoration: InputDecoration(
-                          labelText: AppStrings.trWatch(context, 'product'),
+                          labelText: AppStrings.trWatch(statefulContext, 'product'),
                         ),
-                        validator: (v) => v == null ? AppStrings.trWatch(context, 'selectProduct') : null,
+                        validator: (v) => v == null ? AppStrings.trWatch(statefulContext, 'selectProduct') : null,
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
                         initialValue: amount.toString(),
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: AppStrings.trWatch(context, 'amount'),
+                          labelText: AppStrings.trWatch(statefulContext, 'amount'),
                         ),
                         onChanged: (v) => amount = int.tryParse(v) ?? 1,
                       ),
                       const SizedBox(height: 8),
                       PriceInput(
                         controller: priceAtSaleController,
-                        labelText: AppStrings.trWatch(context, 'priceAtSaleOptional'),
+                        labelText: AppStrings.trWatch(statefulContext, 'priceAtSaleOptional'),
                         prefixText: 'Rp ',
                       ),
                     ] else ...[
                       TextFormField(
                         controller: nameController,
                         decoration: InputDecoration(
-                          labelText: AppStrings.trWatch(context, 'customName'),
+                          labelText: AppStrings.trWatch(statefulContext, 'customName'),
                         ),
                       ),
                       const SizedBox(height: 8),
                       PriceInput(
                         controller: priceController,
-                        labelText: AppStrings.trWatch(context, 'customPrice'),
+                        labelText: AppStrings.trWatch(statefulContext, 'customPrice'),
                         prefixText: 'Rp ',
                       ),
                     ],
@@ -132,7 +134,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                     TextFormField(
                       controller: notesController,
                       decoration: InputDecoration(
-                        labelText: AppStrings.trWatch(context, 'notes'),
+                        labelText: AppStrings.trWatch(statefulContext, 'notes'),
                       ),
                     ),
                   ],
@@ -140,8 +142,10 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(AppStrings.trWatch(context, 'cancel')),
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                  },
+                  child: Text(AppStrings.trWatch(statefulContext, 'cancel')),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -152,7 +156,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                       );
                       if (name.isEmpty || price == null) return;
                       Navigator.pop(
-                        context,
+                        dialogContext,
                         OrderItemData.custom(
                           customName: name,
                           customPrice: price,
@@ -169,7 +173,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                         priceAtSaleController.text.trim(),
                       );
                       Navigator.pop(
-                        context,
+                        dialogContext,
                         OrderItemData.product(
                           productId: selectedProductId!,
                           amount: amount,
@@ -180,7 +184,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                       );
                     }
                   },
-                  child: Text(AppStrings.trWatch(context, 'save')),
+                  child: Text(AppStrings.trWatch(statefulContext, 'save')),
                 ),
               ],
             );
@@ -206,12 +210,12 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
           product: item.product,
           priceAtSale: item.priceAtSale,
         );
-      } else if (item is CustomOrderItem) {
+      } else if (item is create_order.CustomOrderItem) {
         // Use a unique negative key for custom items
         final customId = -item.hashCode;
         _items[customId] = OrderItemData.custom(
-          customName: item.customName,
-          customPrice: item.customPrice,
+          customName: (item as create_order.CustomOrderItem).customName,
+          customPrice: (item as create_order.CustomOrderItem).customPrice,
           notes: item.notes,
         );
       }
@@ -424,9 +428,77 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                                         ? null
                                         : () async {
                                             if (!_formKey.currentState!.validate()) return;
-                                            setState(() => _isSaving = true);
-                                            // TODO: Implement save logic here
-                                            setState(() => _isSaving = false);
+                                            if (_items.isEmpty) {
+                                              setState(() {
+                                                _errorMessage = AppStrings.tr(context, 'pleaseAddAtLeastOneItem');
+                                              });
+                                              return;
+                                            }
+
+                                            setState(() {
+                                              _isSaving = true;
+                                              _errorMessage = null;
+                                            });
+
+                                            try {
+                                              // Convert items to CreateOrderItem format
+                                              final items = <create_order.CreateOrderItem>[];
+                                              for (final item in _items.values) {
+                                                if (item.isCustom) {
+                                                  items.add(
+                                                    create_order.CustomOrderItem(
+                                                      customName: item.customName ?? '',
+                                                      customPrice: item.customPrice ?? 0,
+                                                      notes: item.notes,
+                                                    ),
+                                                  );
+                                                } else {
+                                                  items.add(
+                                                    create_order.ProductOrderItem(
+                                                      productId: item.productId ?? 0,
+                                                      amount: item.amount,
+                                                      notes: item.notes,
+                                                      priceAtSale: item.priceAtSale,
+                                                    ),
+                                                  );
+                                                }
+                                              }
+
+                                              // Capture navigator and messenger before await
+                                              final navigator = Navigator.of(context);
+                                              final messenger = ScaffoldMessenger.of(context);
+                                              final successMessage = AppStrings.tr(context, 'orderUpdatedSuccessfully');
+
+                                              // Update the order via API
+                                              await getApiService().updateOrder(
+                                                widget.order.id,
+                                                customerName: _customerNameController.text.trim(),
+                                                notes: _notesController.text.trim().isEmpty
+                                                    ? null
+                                                    : _notesController.text.trim(),
+                                                items: items,
+                                              );
+
+                                              if (mounted) {
+                                                messenger.showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(successMessage),
+                                                    backgroundColor: AppColors.success,
+                                                  ),
+                                                );
+                                                navigator.pop(true);
+                                              }
+                                            } catch (e) {
+                                              if (mounted) {
+                                                setState(() {
+                                                  _errorMessage = e.toString();
+                                                });
+                                              }
+                                            } finally {
+                                              if (mounted) {
+                                                setState(() => _isSaving = false);
+                                              }
+                                            }
                                           },
                                     child: _isSaving
                                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))

@@ -20,9 +20,9 @@ mixin DataLoaderMixin<T extends StatefulWidget> on State<T> {
 
   /// Helper to load data and update state
   /// Provides consistent pattern across screens
-  void loadData<T>(
-    Future<T> Function() loader,
-    void Function(T data) onSuccess,
+  void loadData<TData>(
+    Future<TData> Function() loader,
+    void Function(TData data) onSuccess,
   ) async {
     try {
       final data = await loader();

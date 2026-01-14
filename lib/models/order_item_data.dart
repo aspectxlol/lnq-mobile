@@ -26,10 +26,9 @@ class OrderItemData {
     required this.customName,
     required this.customPrice,
     this.notes,
-    int amount = 1,
+    this.amount = 1,
   })  : isCustom = true,
         productId = null,
-        amount = amount,
         product = null,
         priceAtSale = null;
 }
