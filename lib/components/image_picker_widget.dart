@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
 

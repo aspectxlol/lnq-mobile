@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:collection/collection.dart';
 import 'dart:ui';
 import '../models/order.dart';
 import '../models/product.dart';
@@ -160,9 +161,10 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                       );
                     } else {
                       if (selectedProductId == null) return;
-                      final product = products.firstWhere(
+                      final product = products.firstWhereOrNull(
                         (p) => p.id == selectedProductId,
                       );
+                      if (product == null) return;
                       final priceAtSale = int.tryParse(
                         priceAtSaleController.text.trim(),
                       );

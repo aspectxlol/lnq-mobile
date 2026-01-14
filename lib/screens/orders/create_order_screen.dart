@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:collection/collection.dart';
 import 'package:intl/intl.dart';
 import '../../models/product.dart';
 import '../../models/create_order_request.dart';
@@ -82,18 +83,22 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   void _incrementProduct(int productId) {
     setState(() {
-      final item = _orderItems.firstWhere((item) => item.productId == productId);
-      item.amount++;
+      final item = _orderItems.firstWhereOrNull((item) => item.productId == productId);
+      if (item != null) {
+        item.amount++;
+      }
     });
   }
 
   void _decrementProduct(int productId) {
     setState(() {
-      final item = _orderItems.firstWhere((item) => item.productId == productId);
-      if (item.amount > 1) {
-        item.amount--;
-      } else {
-        _orderItems.removeWhere((item) => item.productId == productId);
+      final item = _orderItems.firstWhereOrNull((item) => item.productId == productId);
+      if (item != null) {
+        if (item.amount > 1) {
+          item.amount--;
+        } else {
+          _orderItems.removeWhere((item) => item.productId == productId);
+        }
       }
     });
   }
@@ -181,9 +186,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   int _calculateTotal(List<Product> products) {
     int total = 0;
     for (final item in _orderItems) {
-      final product = products.firstWhere((p) => p.id == item.productId);
-      final price = item.priceAtSale ?? product.price;
-      total += price * item.amount;
+      final product = products.firstWhereOrNull((p) => p.id == item.productId);
+      if (product != null) {
+        final price = item.priceAtSale ?? product.price;
+        total += (price * item.amount).toInt();
+      }
     }
     return total;
   }

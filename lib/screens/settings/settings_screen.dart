@@ -43,7 +43,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _healthStatus = null;
     });
 
-    final localContext = context;
     try {
       final url = _baseUrlController.text;
       final apiService = ApiService(url);
@@ -54,8 +53,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _healthStatus = 'success';
         });
         ErrorHandler.showSuccess(
-          localContext,
-          '${AppStrings.tr(localContext, 'connectionSuccessful')}\nDB: ${health['db']}, MinIO: ${health['minio']}',
+          context,
+          '${AppStrings.tr(context, 'connectionSuccessful')}\nDB: ${health['db']}, MinIO: ${health['minio']}',
         );
       }
     } catch (e) {
@@ -63,7 +62,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _healthStatus = 'error';
         });
-        ErrorHandler.showError(localContext, e);
+        ErrorHandler.showError(context, e);
       }
     } finally {
       if (mounted) {
@@ -77,20 +76,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _saveSettings() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final localContext = context;
     try {
-      final settings = localContext.read<SettingsProvider>();
+      final settings = context.read<SettingsProvider>();
       await settings.setBaseUrl(_baseUrlController.text);
 
       if (mounted) {
         ErrorHandler.showSuccess(
-          localContext,
-          AppStrings.tr(localContext, 'settingsSavedSuccessfully'),
+          context,
+          AppStrings.tr(context, 'settingsSavedSuccessfully'),
         );
       }
     } catch (e) {
       if (mounted) {
-        ErrorHandler.showError(localContext, e);
+        ErrorHandler.showError(context, e);
       }
     }
   }
@@ -98,11 +96,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _resetToDefault() async {
     showDialog(
       context: context,
-      builder: (context) => ConfirmationDialog(
-        title: AppStrings.tr(context, 'resetToDefaultTitle'),
-        message: AppStrings.tr(context, 'resetToDefaultConfirm'),
-        confirmLabel: AppStrings.tr(context, 'reset'),
-        cancelLabel: AppStrings.tr(context, 'cancel'),
+      builder: (dialogContext) => ConfirmationDialog(
+        title: AppStrings.tr(dialogContext, 'resetToDefaultTitle'),
+        message: AppStrings.tr(dialogContext, 'resetToDefaultConfirm'),
+        confirmLabel: AppStrings.tr(dialogContext, 'reset'),
+        cancelLabel: AppStrings.tr(dialogContext, 'cancel'),
         isDestructive: true,
         onConfirm: () async {
           try {
@@ -319,41 +317,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           builder: (context, settingsProvider, _) {
                             return Column(
                               children: [
-                                RadioListTile<String>(
+                                ListTile(
                                   title: Text(
                                     AppStrings.trWatch(context, 'indonesian'),
                                   ),
-                                  value: 'id',
-                                  groupValue:
-                                      settingsProvider.locale.languageCode,
-                                  onChanged: (value) async {
-                                    if (value != null) {
-                                      await settingsProvider.setLocale(
-                                        const Locale('id', 'ID'),
-                                      );
-                                    }
-                                  },
+                                  // ignore: deprecated_member_use
+                                  leading: Radio<String>(
+                                    value: 'id',
+                                    // ignore: deprecated_member_use
+                                    groupValue: settingsProvider.locale.languageCode,
+                                    // ignore: deprecated_member_use
+                                    onChanged: (value) async {
+                                      if (value != null) {
+                                        await settingsProvider.setLocale(
+                                          const Locale('id', 'ID'),
+                                        );
+                                      }
+                                    },
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
+                                  onTap: () async {
+                                    await settingsProvider.setLocale(
+                                      const Locale('id', 'ID'),
+                                    );
+                                  },
                                 ),
-                                RadioListTile<String>(
+                                ListTile(
                                   title: Text(
                                     AppStrings.trWatch(context, 'english'),
                                   ),
-                                  value: 'en',
-                                  groupValue:
-                                      settingsProvider.locale.languageCode,
-                                  onChanged: (value) async {
-                                    if (value != null) {
-                                      await settingsProvider.setLocale(
-                                        const Locale('en', 'US'),
-                                      );
-                                    }
-                                  },
+                                  // ignore: deprecated_member_use
+                                  leading: Radio<String>(
+                                    value: 'en',
+                                    // ignore: deprecated_member_use
+                                    groupValue: settingsProvider.locale.languageCode,
+                                    // ignore: deprecated_member_use
+                                    onChanged: (value) async {
+                                      if (value != null) {
+                                        await settingsProvider.setLocale(
+                                          const Locale('en', 'US'),
+                                        );
+                                      }
+                                    },
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
+                                  onTap: () async {
+                                    await settingsProvider.setLocale(
+                                      const Locale('en', 'US'),
+                                    );
+                                  },
                                 ),
                               ],
                             );
