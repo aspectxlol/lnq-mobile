@@ -273,7 +273,7 @@ The API integration is managed through the `ApiService` class located in `lib/se
 **Android** (`android/app/build.gradle.kts`):
 - Minimum SDK: 21
 - Target SDK: Latest stable
-- Application ID: `com.example.lnq`
+- Application ID: `com.aspectxlol.lnq`
 
 **iOS** (`ios/Podfile`):
 - Minimum deployment target: iOS 12.0
@@ -282,6 +282,181 @@ The API integration is managed through the `ApiService` class located in `lib/se
 **Web** (`web/index.html`):
 - Base href configuration for routing
 - Progressive Web App (PWA) settings
+
+### App Name and Icon
+
+#### Changing App Name
+
+**Android** (`android/app/build.gradle.kts`):
+```kotlin
+defaultConfig {
+    applicationId = "com.aspectxlol.lnq"  // Package name
+    ...
+}
+```
+
+Also update `android/app/src/main/AndroidManifest.xml`:
+```xml
+<application
+    android:label="@string/app_name"  <!-- App name appears here -->
+    ...
+```
+
+Update the string in `android/app/src/main/res/values/strings.xml`:
+```xml
+<resources>
+    <string name="app_name">LnQ</string>
+</resources>
+```
+
+**iOS** (`ios/Runner/Info.plist`):
+```xml
+<key>CFBundleName</key>
+<string>LnQ</string>
+
+<key>CFBundleDisplayName</key>
+<string>LnQ</string>
+```
+
+**Web** (`web/index.html`):
+```html
+<title>LnQ</title>
+```
+
+**macOS** (`macos/Runner/Info.plist`):
+```xml
+<key>CFBundleName</key>
+<string>LnQ</string>
+```
+
+**Windows** (`windows/runner/main.cpp`):
+```cpp
+CreateWindow(L"LnQ", ...)
+```
+
+Or use `windows/runner/windows/runner.rc`:
+```
+IDI_APP_ICON            ICON                    "..\\..\\..\\windows\\runner\\resources\\app_icon.ico"
+```
+
+#### Changing App Icon
+
+**Android**:
+
+1. Prepare icon sizes:
+   - `ldpi`: 36x36
+   - `mdpi`: 48x48
+   - `hdpi`: 72x72
+   - `xhdpi`: 96x96
+   - `xxhdpi`: 144x144
+   - `xxxhdpi`: 192x192
+
+2. Place icons in respective folders:
+   ```
+   android/app/src/main/res/
+   ├── mipmap-ldpi/ic_launcher.png
+   ├── mipmap-mdpi/ic_launcher.png
+   ├── mipmap-hdpi/ic_launcher.png
+   ├── mipmap-xhdpi/ic_launcher.png
+   ├── mipmap-xxhdpi/ic_launcher.png
+   └── mipmap-xxxhdpi/ic_launcher.png
+   ```
+
+**iOS**:
+
+1. Prepare icon size: 1024x1024 PNG
+
+2. Replace in Xcode:
+   - Open `ios/Runner.xcworkspace` in Xcode
+   - Navigate to `Runner > Assets.xcassets > AppIcon`
+   - Drag and drop your icon (Xcode will auto-scale)
+
+3. Or replace files directly in:
+   ```
+   ios/Runner/Assets.xcassets/AppIcon.appiconset/
+   ```
+
+**Web**:
+
+1. Prepare icons:
+   - `web/icons/Icon-192.png` (192x192)
+   - `web/icons/Icon-512.png` (512x512)
+   - `web/favicon.png` (any size)
+
+2. Update `web/manifest.json`:
+   ```json
+   {
+     "name": "LnQ",
+     "short_name": "LnQ",
+     "icons": [
+       {
+         "src": "icons/Icon-192.png",
+         "sizes": "192x192",
+         "type": "image/png"
+       },
+       {
+         "src": "icons/Icon-512.png",
+         "sizes": "512x512",
+         "type": "image/png"
+       }
+     ]
+   }
+   ```
+
+**macOS**:
+
+1. Prepare icon: 1024x1024 PNG
+
+2. Open `macos/Runner.xcworkspace` in Xcode
+3. Navigate to `Runner > Assets.xcassets > AppIcon`
+4. Drag and drop your icon
+
+**Windows**:
+
+1. Prepare icon: `windows/runner/resources/app_icon.ico`
+
+2. Convert PNG to ICO format using online converter or ImageMagick:
+   ```sh
+   convert app_icon.png -define icon:auto-resize=256,128,96,64,48,32,16 app_icon.ico
+   ```
+
+3. Replace `windows/runner/resources/app_icon.ico`
+
+**Linux**:
+
+1. Prepare icons in various sizes and place in:
+   ```
+   linux/
+   └── resources/
+       └── <app-id>/
+           └── (your app icons)
+   ```
+
+**Easy Method - Using flutter_launcher_icons Package**:
+
+1. Add to `pubspec.yaml`:
+   ```yaml
+   dev_dependencies:
+     flutter_launcher_icons: ^0.13.0
+   ```
+
+2. Create `flutter_launcher_icons.yaml` in project root:
+   ```yaml
+   flutter_launcher_icons:
+     android: "ic_launcher"
+     ios: true
+     windows: false
+     macos: false
+     image_path: "assets/icon/icon.png"  # Path to your 1024x1024 PNG icon
+     image_path_android: "assets/icon/icon.png"
+     image_path_ios: "assets/icon/icon.png"
+     ```
+
+3. Run:
+   ```sh
+   flutter pub get
+   flutter pub run flutter_launcher_icons:main
+   ```
 
 ### Environment Variables
 
