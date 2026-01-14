@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/product.dart';
 import '../models/order.dart';
 import '../models/create_order_request.dart';
+import '../constants/app_constants.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -16,69 +17,115 @@ class ApiException implements Exception {
 
 class ApiService {
   final String baseUrl;
+  late final http.Client _client;
 
-  ApiService(this.baseUrl);
+  ApiService(this.baseUrl) {
+    _client = http.Client();
+  }
 
   Map<String, String> get _headers => {'Content-Type': 'application/json'};
+
+  /// Retry a future with exponential backoff
+  Future<T> _retryWithBackoff<T>(
+    Future<T> Function() operation, {
+    int maxAttempts = AppConstants.apiRetryAttempts,
+  }) async {
+    int attempt = 0;
+    while (true) {
+      try {
+        attempt++;
+        return await operation();
+      } catch (e) {
+        if (attempt >= maxAttempts ||
+            (e is ApiException && e.statusCode != null && e.statusCode! < 500)) {
+          rethrow;
+        }
+        await Future.delayed(
+          AppConstants.apiRetryDelay * (1 << (attempt - 1)),
+        );
+      }
+    }
+  }
 
   Future<T> _handleResponse<T>(
     http.Response response,
     T Function(Map<String, dynamic>) fromJson,
   ) async {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      final data = json.decode(response.body);
-      if (data['success'] == true) {
-        return fromJson(data);
-      } else {
+      try {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        if (data['success'] == true) {
+          return fromJson(data);
+        } else {
+          throw ApiException(
+            data['message'] ?? 'Unknown error',
+            response.statusCode,
+          );
+        }
+      } catch (e) {
+        if (e is ApiException) rethrow;
+        throw ApiException('Invalid response format', response.statusCode);
+      }
+    } else {
+      try {
+        final data = json.decode(response.body) as Map<String, dynamic>;
         throw ApiException(
-          data['message'] ?? 'Unknown error',
+          data['message'] ?? 'Request failed',
+          response.statusCode,
+        );
+      } catch (e) {
+        if (e is ApiException) rethrow;
+        throw ApiException(
+          'Request failed with status ${response.statusCode}',
           response.statusCode,
         );
       }
-    } else {
-      final data = json.decode(response.body);
-      throw ApiException(
-        data['message'] ?? 'Request failed',
-        response.statusCode,
-      );
     }
   }
 
   // Products
   Future<List<Product>> getProducts() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/products'),
-        headers: _headers,
-      );
+    return _retryWithBackoff(() async {
+      try {
+        final response = await _client
+            .get(
+              Uri.parse('$baseUrl${AppConstants.apiProductsEndpoint}'),
+              headers: _headers,
+            )
+            .timeout(const Duration(seconds: AppConstants.apiTimeoutSeconds));
 
-      return await _handleResponse(
-        response,
-        (data) => (data['data'] as List)
-            .map((item) => Product.fromJson(item))
-            .toList(),
-      );
-    } catch (e) {
-      if (e is ApiException) rethrow;
-      throw ApiException('Failed to fetch products: $e');
-    }
+        return await _handleResponse(
+          response,
+          (data) => (data['data'] as List)
+              .map((item) => Product.fromJson(item as Map<String, dynamic>))
+              .toList(),
+        );
+      } catch (e) {
+        if (e is ApiException) rethrow;
+        throw ApiException('Failed to fetch products: $e');
+      }
+    });
   }
 
   Future<Product> getProduct(int id) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/products/$id'),
-        headers: _headers,
-      );
+    return _retryWithBackoff(() async {
+      try {
+        final response = await _client
+            .get(
+              Uri.parse('$baseUrl${AppConstants.apiProductsEndpoint}/$id'),
+              headers: _headers,
+            )
+            .timeout(const Duration(seconds: AppConstants.apiTimeoutSeconds));
 
-      return await _handleResponse(
-        response,
-        (data) => Product.fromJson(data['data']),
-      );
-    } catch (e) {
-      if (e is ApiException) rethrow;
-      throw ApiException('Failed to fetch product: $e');
-    }
+        return await _handleResponse(
+          response,
+          (data) => Product.fromJson(data['data'] as Map<String, dynamic>),
+        );
+      } catch (e) {
+        if (e is ApiException) rethrow;
+        throw ApiException('Failed to fetch product: $e');
+      }
+    });
   }
 
   Future<Product> createProduct({

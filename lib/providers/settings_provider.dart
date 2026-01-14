@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/app_constants.dart';
 
 class SettingsProvider with ChangeNotifier {
-  static const String _baseUrlKey = 'base_url';
-  static const String _localeKey = 'locale';
-  static const String _defaultBaseUrl = 'http://localhost:3000';
-
-  String _baseUrl = _defaultBaseUrl;
-  Locale _locale = const Locale('id', 'ID');
+  String _baseUrl = AppConstants.defaultBaseUrl;
+  Locale _locale = Locale(
+    AppConstants.defaultLocale,
+    AppConstants.defaultLocaleCountry,
+  );
 
   String get baseUrl => _baseUrl;
   Locale get locale => _locale;
@@ -20,11 +20,18 @@ class SettingsProvider with ChangeNotifier {
   Future<void> _loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _baseUrl = prefs.getString(_baseUrlKey) ?? _defaultBaseUrl;
-      
-      final localeCode = prefs.getString(_localeKey) ?? 'id';
-      _locale = Locale(localeCode, localeCode == 'id' ? 'ID' : 'US');
-      
+      _baseUrl = prefs.getString(AppConstants.storageBaseUrlKey) ??
+          AppConstants.defaultBaseUrl;
+
+      final localeCode =
+          prefs.getString(AppConstants.storageLocaleKey) ?? AppConstants.defaultLocale;
+      _locale = Locale(
+        localeCode,
+        localeCode == AppConstants.defaultLocale
+            ? AppConstants.defaultLocaleCountry
+            : AppConstants.englishLocaleCountry,
+      );
+
       notifyListeners();
     } catch (e) {
       debugPrint('Failed to load settings: $e');
@@ -39,7 +46,7 @@ class SettingsProvider with ChangeNotifier {
           : url;
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_baseUrlKey, cleanUrl);
+      await prefs.setString(AppConstants.storageBaseUrlKey, cleanUrl);
       _baseUrl = cleanUrl;
       notifyListeners();
     } catch (e) {
@@ -49,13 +56,16 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Future<void> resetToDefault() async {
-    await setBaseUrl(_defaultBaseUrl);
+    await setBaseUrl(AppConstants.defaultBaseUrl);
   }
 
   Future<void> setLocale(Locale locale) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_localeKey, locale.languageCode);
+      await prefs.setString(
+        AppConstants.storageLocaleKey,
+        locale.languageCode,
+      );
       _locale = locale;
       notifyListeners();
     } catch (e) {

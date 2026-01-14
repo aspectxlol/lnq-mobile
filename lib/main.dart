@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'constants/app_constants.dart';
 import 'providers/settings_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/products_screen.dart';
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = context.watch<SettingsProvider>().locale;
-    
+
     return MaterialApp(
       title: 'LNQ',
       debugShowCheckedModeBanner: false,
@@ -44,7 +45,7 @@ class _MainScreenState extends State<MainScreen>
   int _currentIndex = 0;
   late AnimationController _fabAnimationController;
 
-  final List<Widget> _screens = const [
+  static const List<Widget> _screens = [
     ProductsScreen(),
     OrdersScreen(),
     SettingsScreen(),
@@ -54,7 +55,7 @@ class _MainScreenState extends State<MainScreen>
   void initState() {
     super.initState();
     _fabAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: AppConstants.fabAnimationDuration,
       vsync: this,
     );
     _fabAnimationController.forward();
@@ -78,7 +79,7 @@ class _MainScreenState extends State<MainScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
+        duration: AppConstants.screenTransitionDuration,
         switchInCurve: Curves.easeInOut,
         switchOutCurve: Curves.easeInOut,
         transitionBuilder: (child, animation) {
@@ -105,36 +106,20 @@ class _MainScreenState extends State<MainScreen>
           backgroundColor: AppColors.card,
           indicatorColor: AppColors.primary.withOpacity(0.2),
           height: 70,
-          destinations: [
+          destinations: const [
             NavigationDestination(
-              icon: Icon(
-                _currentIndex == 0
-                    ? Icons.shopping_bag
-                    : Icons.shopping_bag_outlined,
-                color: _currentIndex == 0
-                    ? AppColors.primary
-                    : AppColors.mutedForeground,
-              ),
+              icon: Icon(Icons.shopping_bag_outlined),
+              selectedIcon: Icon(Icons.shopping_bag),
               label: 'Products',
             ),
             NavigationDestination(
-              icon: Icon(
-                _currentIndex == 1
-                    ? Icons.receipt_long
-                    : Icons.receipt_long_outlined,
-                color: _currentIndex == 1
-                    ? AppColors.primary
-                    : AppColors.mutedForeground,
-              ),
+              icon: Icon(Icons.receipt_long_outlined),
+              selectedIcon: Icon(Icons.receipt_long),
               label: 'Orders',
             ),
             NavigationDestination(
-              icon: Icon(
-                _currentIndex == 2 ? Icons.settings : Icons.settings_outlined,
-                color: _currentIndex == 2
-                    ? AppColors.primary
-                    : AppColors.mutedForeground,
-              ),
+              icon: Icon(Icons.settings_outlined),
+              selectedIcon: Icon(Icons.settings),
               label: 'Settings',
             ),
           ],

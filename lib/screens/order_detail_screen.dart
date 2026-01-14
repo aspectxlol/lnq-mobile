@@ -9,7 +9,8 @@ import '../components/order_item_row.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
 import '../utils/currency_utils.dart';
-import '../utils/data_loader_extension.dart';
+import '../utils/state_extension.dart';
+import '../utils/error_handler.dart';
 import '../widgets/confirmation_dialog.dart';
 
 class OrderDetailScreen extends StatefulWidget {
@@ -39,25 +40,18 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     setState(() => _isPrinting = true);
     try {
       await getApiService().printOrder(widget.orderId);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppStrings.tr(context, 'orderSentToPrinter')),
-            backgroundColor: AppColors.success,
-          ),
+      ifMounted(() {
+        ErrorHandler.showSuccess(
+          context,
+          AppStrings.tr(context, 'orderSentToPrinter'),
         );
-      }
+      });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${AppStrings.tr(context, 'failedToPrint')}: $e'),
-            backgroundColor: AppColors.destructive,
-          ),
-        );
-      }
+      ifMounted(() {
+        ErrorHandler.showError(context, e);
+      });
     } finally {
-      if (mounted) setState(() => _isPrinting = false);
+      ifMounted(() => setState(() => _isPrinting = false));
     }
   }
 
@@ -73,16 +67,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     if (confirmed != true) return;
     try {
       await getApiService().deleteOrder(widget.orderId);
-      if (mounted) Navigator.pop(context, true);
+      ifMounted(() => Navigator.pop(context, true));
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${AppStrings.tr(context, 'failedToDelete')}: $e'),
-            backgroundColor: AppColors.destructive,
-          ),
-        );
-      }
+      ifMounted(() {
+        ErrorHandler.showError(context, e);
+      });
     }
   }
 
@@ -101,23 +90,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           items: result['items'],
         );
         _loadOrder();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppStrings.tr(context, 'orderUpdatedSuccessfully')),
-              backgroundColor: AppColors.success,
-            ),
+        ifMounted(() {
+          ErrorHandler.showSuccess(
+            context,
+            AppStrings.tr(context, 'orderUpdatedSuccessfully'),
           );
-        }
+        });
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${AppStrings.tr(context, 'failedToUpdateOrder')}: $e'),
-              backgroundColor: AppColors.destructive,
-            ),
-          );
-        }
+        ifMounted(() {
+          ErrorHandler.showError(context, e);
+        });
       }
     }
   }
