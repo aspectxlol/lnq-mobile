@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'constants/app_constants.dart';
 import 'providers/settings_provider.dart';
 import 'theme/app_theme.dart';
-import 'screens/products_screen.dart';
+import 'screens/product_management_screen.dart';
 import 'screens/orders_screen.dart';
 import 'screens/settings_screen.dart';
 
@@ -46,7 +46,7 @@ class _MainScreenState extends State<MainScreen>
   late AnimationController _fabAnimationController;
 
   static const List<Widget> _screens = [
-    ProductsScreen(),
+    ProductManagementScreen(),
     OrdersScreen(),
     SettingsScreen(),
   ];

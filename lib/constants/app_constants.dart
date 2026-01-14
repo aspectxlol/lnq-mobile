@@ -5,6 +5,8 @@ class AppConstants {
   static const String apiProductsEndpoint = '/api/products';
   static const String apiOrdersEndpoint = '/api/orders';
   static const String apiImagesEndpoint = '/api/images';
+  static const String apiPrinterEndpoint = '/api/printer';
+  static const String apiHealthEndpoint = '/health';
   static const int apiTimeoutSeconds = 30;
   static const int apiRetryAttempts = 3;
   static const Duration apiRetryDelay = Duration(milliseconds: 500);
@@ -31,6 +33,17 @@ class AppConstants {
 
   // Validation
   static const int maxProductNameLength = 100;
+  static const int minProductPrice = 0;
+  static const int maxProductPrice = 999999999;
+  static const int minOrderAmount = 1;
+  static const int maxOrderAmount = 9999;
+
+  // Date Format
+  static const String dateFormat = 'yyyy-MM-dd';
+  static const String dateTimeFormat = 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\'';
+
+  // HTTP Headers
+  static const String contentTypeJson = 'application/json';
 
   AppConstants._();
 }

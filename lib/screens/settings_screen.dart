@@ -6,7 +6,8 @@ import '../services/api_service.dart';
 import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
 import '../components/info_row.dart';
-import '../widgets/confirmation_dialog.dart';
+import '../widgets/screen_scaffold.dart';
+import '../utils/error_handler.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -51,13 +52,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _healthStatus = 'success';
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${AppStrings.tr(context, 'connectionSuccessful')}\nDB: ${health['db']}, MinIO: ${health['minio']}',
-            ),
-            backgroundColor: AppColors.success,
-          ),
+        ErrorHandler.showSuccess(
+          context,
+          '${AppStrings.tr(context, 'connectionSuccessful')}\nDB: ${health['db']}, MinIO: ${health['minio']}',
         );
       }
     } catch (e) {
@@ -65,12 +62,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _healthStatus = 'error';
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${AppStrings.tr(context, 'connectionFailed')}: $e'),
-            backgroundColor: AppColors.destructive,
-          ),
-        );
+        ErrorHandler.showError(context, e);
       }
     } finally {
       if (mounted) {
@@ -89,74 +81,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await settings.setBaseUrl(_baseUrlController.text);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppStrings.tr(context, 'settingsSavedSuccessfully')),
-            backgroundColor: AppColors.success,
-          ),
+        ErrorHandler.showSuccess(
+          context,
+          AppStrings.tr(context, 'settingsSavedSuccessfully'),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${AppStrings.tr(context, 'failedToSaveSettings')}: $e',
-            ),
-            backgroundColor: AppColors.destructive,
-          ),
-        );
+        ErrorHandler.showError(context, e);
       }
     }
   }
 
   Future<void> _resetToDefault() async {
-    final confirmed = await ConfirmationDialog.show(
-      context,
-      title: AppStrings.tr(context, 'resetToDefaultTitle'),
-      content: AppStrings.tr(context, 'resetToDefaultConfirm'),
-      confirmLabel: AppStrings.tr(context, 'reset'),
-      cancelLabel: AppStrings.tr(context, 'cancel'),
+    showDialog(
+      context: context,
+      builder: (context) => ConfirmationDialog(
+        title: AppStrings.tr(context, 'resetToDefaultTitle'),
+        message: AppStrings.tr(context, 'resetToDefaultConfirm'),
+        confirmLabel: AppStrings.tr(context, 'reset'),
+        cancelLabel: AppStrings.tr(context, 'cancel'),
+        isDestructive: true,
+        onConfirm: () async {
+          try {
+            final settings = context.read<SettingsProvider>();
+            await settings.resetToDefault();
+            setState(() {
+              _baseUrlController.text = settings.baseUrl;
+              _healthStatus = null;
+            });
+
+            if (mounted) {
+              ErrorHandler.showSuccess(
+                context,
+                AppStrings.tr(context, 'settingsResetToDefault'),
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              ErrorHandler.showError(context, e);
+            }
+          }
+        },
+      ),
     );
-
-    if (confirmed != true) return;
-
-    try {
-      final settings = context.read<SettingsProvider>();
-      await settings.resetToDefault();
-      setState(() {
-        _baseUrlController.text = settings.baseUrl;
-        _healthStatus = null;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppStrings.tr(context, 'settingsResetToDefault')),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${AppStrings.tr(context, 'failedToResetSettings')}: $e',
-            ),
-            backgroundColor: AppColors.destructive,
-          ),
-        );
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
 
-    return Scaffold(
-      appBar: AppBar(title: Text(AppStrings.trWatch(context, 'settings'))),
+    return ScreenScaffold(
+      title: AppStrings.trWatch(context, 'settings'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
