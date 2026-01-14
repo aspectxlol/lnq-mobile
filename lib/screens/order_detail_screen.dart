@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/order.dart';
-import '../services/api_service.dart';
 import '../providers/settings_provider.dart';
 import '../components/edit_order_screen.dart';
 import '../components/order_item_row.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
 import '../utils/currency_utils.dart';
+import '../utils/data_loader_extension.dart';
+import '../widgets/confirmation_dialog.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final int orderId;
@@ -29,19 +30,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   void _loadOrder() {
-    final baseUrl = context.read<SettingsProvider>().baseUrl;
-    final apiService = ApiService(baseUrl);
     setState(() {
-      _orderFuture = apiService.getOrder(widget.orderId);
+      _orderFuture = getApiService().getOrder(widget.orderId);
     });
   }
 
   Future<void> _printOrder() async {
     setState(() => _isPrinting = true);
     try {
-      final baseUrl = context.read<SettingsProvider>().baseUrl;
-      final apiService = ApiService(baseUrl);
-      await apiService.printOrder(widget.orderId);
+      await getApiService().printOrder(widget.orderId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -65,29 +62,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> _deleteOrder() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppStrings.tr(context, 'deleteOrder')),
-        content: Text(AppStrings.tr(context, 'deleteOrderConfirm')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(AppStrings.tr(context, 'cancel')),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
-            child: Text(AppStrings.tr(context, 'delete')),
-          ),
-        ],
-      ),
+    final confirmed = await ConfirmationDialog.show(
+      context,
+      title: AppStrings.tr(context, 'deleteOrder'),
+      content: AppStrings.tr(context, 'deleteOrderConfirm'),
+      confirmLabel: AppStrings.tr(context, 'delete'),
+      cancelLabel: AppStrings.tr(context, 'cancel'),
+      isDestructive: true,
     );
     if (confirmed != true) return;
     try {
-      final baseUrl = context.read<SettingsProvider>().baseUrl;
-      final apiService = ApiService(baseUrl);
-      await apiService.deleteOrder(widget.orderId);
+      await getApiService().deleteOrder(widget.orderId);
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -108,9 +93,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
     if (result != null && mounted) {
       try {
-        final baseUrl = context.read<SettingsProvider>().baseUrl;
-        final apiService = ApiService(baseUrl);
-        await apiService.updateOrder(
+        await getApiService().updateOrder(
           widget.orderId,
           customerName: result['customerName'],
           pickupDate: result['pickupDate'],

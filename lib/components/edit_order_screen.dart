@@ -1,49 +1,15 @@
-import '../screens/order_detail_screen.dart';
-import 'info_row.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
+import 'dart:ui';
 import '../models/order.dart';
 import '../models/product.dart';
-import '../models/create_order_request.dart' as create_order;
+import '../models/order_item_data.dart';
 import '../services/api_service.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/currency_utils.dart';
 import '../l10n/strings.dart';
-import '../widgets/note_container.dart';
-import 'dart:ui';
-
-// Move _OrderItemData definition to the top so it is available for type checks
-class _OrderItemData {
-  final bool isCustom;
-  final int? productId;
-  final int amount;
-  final String? notes;
-  final Product? product;
-  final int? priceAtSale;
-  final String? customName;
-  final int? customPrice;
-  _OrderItemData.product({
-    required this.productId,
-    required this.amount,
-    this.notes,
-    this.product,
-    this.priceAtSale,
-  })  : isCustom = false,
-        customName = null,
-        customPrice = null;
-
-  _OrderItemData.custom({
-    required this.customName,
-    required this.customPrice,
-    this.notes,
-  })  : isCustom = true,
-        productId = null,
-        amount = 1,
-        product = null,
-        priceAtSale = null;
-}
+import 'price_input.dart';
 
 class EditOrderScreen extends StatefulWidget {
   final Order order;
@@ -57,16 +23,16 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _customerNameController;
   late TextEditingController _notesController;
-  final Map<int, _OrderItemData> _items = {};
-  DateTime? _pickupDate;
+  final Map<int, OrderItemData> _items = {};
+  // DateTime? _pickupDate; // Removed unused field
   late Future<List<Product>> _productsFuture;
   bool _isSaving = false;
   String? _errorMessage;
 
-  Future<_OrderItemData?> _showEditItemDialog(
+  Future<OrderItemData?> _showEditItemDialog(
     BuildContext context, {
     required List<Product> products,
-    _OrderItemData? item,
+    OrderItemData? item,
   }) async {
     final isCustom = item?.isCustom ?? false;
     final TextEditingController nameController = TextEditingController(
@@ -85,10 +51,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
         ? item!.priceAtSale.toString()
         : '',
     );
-    String formattedPriceAtSale = priceAtSaleController.text.isNotEmpty
-      ? formatIdr(int.tryParse(priceAtSaleController.text) ?? 0)
-      : '';
-    return await showDialog<_OrderItemData>(
+    return await showDialog<OrderItemData>(
       context: context,
       builder: (context) {
         bool custom = isCustom;
@@ -147,20 +110,10 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                         onChanged: (v) => amount = int.tryParse(v) ?? 1,
                       ),
                       const SizedBox(height: 8),
-                      TextFormField(
+                      PriceInput(
                         controller: priceAtSaleController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: AppStrings.trWatch(context, 'priceAtSaleOptional'),
-                          prefixText: 'Rp ',
-                          helperText: formattedPriceAtSale.isNotEmpty ? formattedPriceAtSale : null,
-                        ),
-                        onChanged: (v) {
-                          setState(() {
-                            final value = int.tryParse(v) ?? 0;
-                            formattedPriceAtSale = v.isNotEmpty ? formatIdr(value) : '';
-                          });
-                        },
+                        labelText: AppStrings.trWatch(context, 'priceAtSaleOptional'),
+                        prefixText: 'Rp ',
                       ),
                     ] else ...[
                       TextFormField(
@@ -170,12 +123,10 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      TextFormField(
+                      PriceInput(
                         controller: priceController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: AppStrings.trWatch(context, 'customPrice'),
-                        ),
+                        labelText: AppStrings.trWatch(context, 'customPrice'),
+                        prefixText: 'Rp ',
                       ),
                     ],
                     const SizedBox(height: 8),
@@ -198,12 +149,12 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                     if (custom) {
                       final name = nameController.text.trim();
                       final price = int.tryParse(
-                        priceController.text.trim() ?? '',
+                        priceController.text.trim(),
                       );
                       if (name.isEmpty || price == null) return;
                       Navigator.pop(
                         context,
-                        _OrderItemData.custom(
+                        OrderItemData.custom(
                           customName: name,
                           customPrice: price,
                           notes: notesController.text.trim(),
@@ -219,7 +170,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                       );
                       Navigator.pop(
                         context,
-                        _OrderItemData.product(
+                        OrderItemData.product(
                           productId: selectedProductId!,
                           amount: amount,
                           notes: notesController.text.trim(),
@@ -246,10 +197,9 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
       text: widget.order.customerName,
     );
     _notesController = TextEditingController(text: widget.order.notes ?? '');
-    _pickupDate = widget.order.pickupDate;
     for (final item in widget.order.items) {
       if (item is ProductOrderItem) {
-        _items[item.productId] = _OrderItemData.product(
+        _items[item.productId] = OrderItemData.product(
           productId: item.productId,
           amount: item.amount,
           notes: item.notes,
@@ -259,7 +209,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
       } else if (item is CustomOrderItem) {
         // Use a unique negative key for custom items
         final customId = -item.hashCode;
-        _items[customId] = _OrderItemData.custom(
+        _items[customId] = OrderItemData.custom(
           customName: item.customName,
           customPrice: item.customPrice,
           notes: item.notes,

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../components/date_range_filter.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/order.dart';
-import '../services/api_service.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/empty_state.dart';
@@ -12,8 +10,9 @@ import '../widgets/animated_widgets.dart';
 import '../components/order_card.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
+import '../utils/data_loader_extension.dart';
 import 'order_detail_screen.dart';
-import 'create_order_screen.dart' hide Theme;
+import 'create_order_screen.dart';
 
 enum OrderView { list, calendar }
 
@@ -223,10 +222,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   void _loadOrders() {
-    final baseUrl = context.read<SettingsProvider>().baseUrl;
-    final apiService = ApiService(baseUrl);
     setState(() {
-      _ordersFuture = apiService.getOrders();
+      _ordersFuture = getApiService().getOrders();
     });
   }
 

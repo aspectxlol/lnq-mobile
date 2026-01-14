@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'providers/settings_provider.dart';
 import 'theme/app_theme.dart';
@@ -44,7 +43,6 @@ class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
   late AnimationController _fabAnimationController;
-  late Animation<double> _fabScaleAnimation;
 
   final List<Widget> _screens = const [
     ProductsScreen(),
@@ -58,9 +56,6 @@ class _MainScreenState extends State<MainScreen>
     _fabAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
-    );
-    _fabScaleAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
-      CurvedAnimation(parent: _fabAnimationController, curve: Curves.easeInOut),
     );
     _fabAnimationController.forward();
   }

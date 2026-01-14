@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/product.dart';
-import '../services/api_service.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/empty_state.dart';
-import '../widgets/animated_widgets.dart';
 import '../components/product_list_item.dart';
 import '../components/product_card.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
-import 'product_detail_screen.dart';
+import '../utils/data_loader_extension.dart';
 
 enum ProductView { cards, list }
 
@@ -32,10 +30,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   void _loadProducts() {
-    final baseUrl = context.read<SettingsProvider>().baseUrl;
-    final apiService = ApiService(baseUrl);
     setState(() {
-      _productsFuture = apiService.getProducts();
+      _productsFuture = getApiService().getProducts();
     });
   }
 

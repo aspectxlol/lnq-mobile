@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/product.dart';
-import '../services/api_service.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
 import '../l10n/strings.dart';
+import '../utils/data_loader_extension.dart';
 import '../components/info_row.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -28,10 +28,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   void _loadProduct() {
-    final baseUrl = context.read<SettingsProvider>().baseUrl;
-    final apiService = ApiService(baseUrl);
     setState(() {
-      _productFuture = apiService.getProduct(widget.productId);
+      _productFuture = getApiService().getProduct(widget.productId);
     });
   }
 
@@ -46,13 +44,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           }
 
           if (snapshot.hasError) {
-            String errorMsg = 'Failed to load product details';
-            final error = snapshot.error;
-            if (error is ApiException) {
-              errorMsg = error.message;
-            } else if (error is Exception) {
-              errorMsg = error.toString();
-            }
+            String errorMsg = snapshot.error.toString();
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/product.dart';
 import '../models/create_order_request.dart';
-import '../services/api_service.dart';
+import '../models/order_item_data.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/empty_state.dart';
@@ -11,9 +11,11 @@ import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
 import '../components/product_dropdown_item.dart';
 import '../components/quantity_selector.dart';
+import '../components/price_input.dart';
 import '../widgets/labeled_value_row.dart';
 import '../widgets/note_container.dart';
 import '../l10n/strings.dart';
+import '../utils/data_loader_extension.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   const CreateOrderScreen({super.key});
@@ -29,7 +31,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   late Future<List<Product>> _productsFuture;
 
   DateTime? _pickupDate;
-  final List<_OrderItemData> _orderItems = []; // Unified list for both product and custom items
+  final List<OrderItemData> _orderItems = []; // Unified list for both product and custom items
   bool _isCreating = false;
 
   @override
@@ -39,13 +41,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   }
 
   void _loadProducts() {
-    final baseUrl = Provider.of<SettingsProvider>(
-      context,
-      listen: false,
-    ).baseUrl;
-    final apiService = ApiService(baseUrl);
     setState(() {
-      _productsFuture = apiService.getProducts();
+      _productsFuture = getApiService().getProducts();
     });
   }
 
@@ -128,11 +125,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     });
 
     try {
-      final baseUrl = Provider.of<SettingsProvider>(
-        context,
-        listen: false,
-      ).baseUrl;
-      final apiService = ApiService(baseUrl);
+      final apiService = getApiService();
 
       final items = _orderItems.map((item) {
         if (item.isCustom) {
@@ -216,13 +209,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                PriceInput(
                   controller: customPriceController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Custom Price',
-                    prefixIcon: Icon(Icons.price_change),
-                  ),
+                  labelText: 'Custom Price',
+                  prefixText: 'Rp ',
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -248,7 +238,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                 final notes = customNotesController.text.trim();
                 if (name.isEmpty || price < 0) return;
                 setState(() {
-                  _orderItems.add(_OrderItemData.custom(
+                  _orderItems.add(OrderItemData.custom(
                     customName: name,
                     customPrice: price,
                     notes: notes.isNotEmpty ? notes : null,
@@ -340,31 +330,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
-                  TextFormField(
+                  PriceInput(
                     controller: customPriceController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      hintText: 'Masukkan harga custom',
-                      prefixIcon: const Icon(Icons.price_change),
-                    ),
-                    inputFormatters: [
-                      // Only allow digits, formatting handled in onChanged
-                    ],
+                    labelText: 'Price at sale (optional):',
+                    prefixText: 'Rp ',
                     onChanged: (value) {
-                      // Remove non-digit characters
-                      String digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-                      int? parsed = int.tryParse(digits);
                       setDialogState(() {
-                        customPrice = parsed;
-                        // Format as IDR for display, allow 0 (free)
-                        String formatted = digits.isEmpty
-                            ? ''
-                            : _formatIdr(parsed ?? 0, allowZero: true);
-                        int caret = formatted.length;
-                        customPriceController.value = TextEditingValue(
-                          text: formatted,
-                          selection: TextSelection.collapsed(offset: caret),
-                        );
+                        customPrice = int.tryParse(value);
                       });
                     },
                   ),
@@ -426,7 +398,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               onPressed: selectedProduct != null
                   ? () {
                       setState(() {
-                        _orderItems.add(_OrderItemData.product(
+                        _orderItems.add(OrderItemData.product(
                           productId: selectedProduct!.id,
                           amount: quantity,
                           priceAtSale: customPrice,
@@ -834,35 +806,4 @@ class ProductOrderItemCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _OrderItemData {
-  final bool isCustom;
-  final int? productId;
-  int amount;
-  final String? notes;
-  final Product? product;
-  final int? priceAtSale;
-  final String? customName;
-  final int? customPrice;
-
-  _OrderItemData.product({
-    required this.productId,
-    required this.amount,
-    this.notes,
-    this.product,
-    this.priceAtSale,
-  })  : isCustom = false,
-        customName = null,
-        customPrice = null;
-
-  _OrderItemData.custom({
-    required this.customName,
-    required this.customPrice,
-    this.amount = 1,
-    this.notes,
-  })  : isCustom = true,
-        productId = null,
-        product = null,
-        priceAtSale = null;
 }

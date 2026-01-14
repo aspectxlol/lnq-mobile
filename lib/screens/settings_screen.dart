@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
 import '../components/info_row.dart';
+import '../widgets/confirmation_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -110,22 +111,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _resetToDefault() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppStrings.tr(context, 'resetToDefaultTitle')),
-        content: Text(AppStrings.tr(context, 'resetToDefaultConfirm')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(AppStrings.tr(context, 'cancel')),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(AppStrings.tr(context, 'reset')),
-          ),
-        ],
-      ),
+    final confirmed = await ConfirmationDialog.show(
+      context,
+      title: AppStrings.tr(context, 'resetToDefaultTitle'),
+      content: AppStrings.tr(context, 'resetToDefaultConfirm'),
+      confirmLabel: AppStrings.tr(context, 'reset'),
+      cancelLabel: AppStrings.tr(context, 'cancel'),
     );
 
     if (confirmed != true) return;
