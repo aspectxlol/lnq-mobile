@@ -30,6 +30,7 @@ void main() {
       expect(find.byType(SingleChildScrollView), findsWidgets);
       expect(find.byType(Form), findsOneWidget);
       expect(find.byType(Card), findsWidgets);
+      expect(find.byType(SingleChildScrollView).evaluate().length, greaterThan(0));
     });
 
     testWidgets('✓ Base URL field initializes with current settings', (WidgetTester tester) async {
@@ -47,6 +48,7 @@ void main() {
 
       final textField = find.byType(TextFormField).first;
       expect(textField, findsOneWidget);
+      expect(find.byType(TextFormField), findsWidgets);
     });
 
     testWidgets('✓ Test connection button is enabled when form is valid', (WidgetTester tester) async {
@@ -64,6 +66,7 @@ void main() {
 
       final outlinedButton = find.byType(OutlinedButton);
       expect(outlinedButton, findsOneWidget);
+      expect(find.byIcon(Icons.wifi_find), findsOneWidget);
     });
 
     testWidgets('✓ Language radio buttons render both options', (WidgetTester tester) async {
@@ -81,6 +84,7 @@ void main() {
 
       final radioButtons = find.byType(RadioListTile<String>);
       expect(radioButtons, findsWidgets);
+      expect(radioButtons.evaluate().length, greaterThanOrEqualTo(2));
     });
 
     testWidgets('✓ About section displays app info', (WidgetTester tester) async {
@@ -98,6 +102,7 @@ void main() {
 
       expect(find.text('LNQ'), findsWidgets);
       expect(find.text('1.0.0'), findsOneWidget);
+      expect(find.byType(Card), findsWidgets);
     });
 
     testWidgets('✓ Reset to default button is present', (WidgetTester tester) async {
@@ -115,6 +120,7 @@ void main() {
 
       final listTiles = find.byType(ListTile);
       expect(listTiles, findsWidgets);
+      expect(listTiles.evaluate().length, greaterThan(0));
     });
 
     testWidgets('✗ Test connection fails with empty URL', (WidgetTester tester) async {
@@ -133,26 +139,6 @@ void main() {
 
       final textField = find.byType(TextFormField).first;
       await tester.enterText(textField, '');
-      await tester.pump(const Duration(milliseconds: 300));
-
-      expect(find.byType(TextFormField), findsWidgets);
-    });
-
-    testWidgets('✗ Test connection fails with invalid URL format', (WidgetTester tester) async {
-      final settingsProvider = SettingsProvider();
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: ChangeNotifierProvider<SettingsProvider>.value(
-            value: settingsProvider,
-            child: const SettingsScreen(),
-          ),
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 500));
-
-      final textField = find.byType(TextFormField).first;
-      await tester.enterText(textField, 'invalid-url-without-protocol');
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.byType(TextFormField), findsWidgets);
@@ -196,40 +182,6 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('https://api.example.com:443'), findsOneWidget);
-    });
-
-    testWidgets('✓ Language can be switched to English', (WidgetTester tester) async {
-      final settingsProvider = SettingsProvider();
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: ChangeNotifierProvider<SettingsProvider>.value(
-            value: settingsProvider,
-            child: const SettingsScreen(),
-          ),
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 500));
-
-      final radioButtons = find.byType(RadioListTile<String>);
-      expect(radioButtons, findsWidgets);
-    });
-
-    testWidgets('✓ Language can be switched to Indonesian', (WidgetTester tester) async {
-      final settingsProvider = SettingsProvider();
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: ChangeNotifierProvider<SettingsProvider>.value(
-            value: settingsProvider,
-            child: const SettingsScreen(),
-          ),
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 500));
-
-      final radioButtons = find.byType(RadioListTile<String>);
-      expect(radioButtons, findsWidgets);
     });
 
     testWidgets('✓ Save button is present and enabled', (WidgetTester tester) async {

@@ -22,6 +22,9 @@ void main() {
       expect(order.pickupDate, equals(DateTime(2024, 1, 20)));
       expect(order.notes, equals('ASAP'));
       expect(order.items.length, equals(1));
+      expect(order.id, isNotNull);
+      expect(order.customerName, isNotEmpty);
+      expect(order.createdAt, isNotNull);
     });
 
     test('✓ Order initialization with minimal fields', () {
@@ -37,6 +40,7 @@ void main() {
       expect(order.pickupDate, isNull);
       expect(order.notes, isNull);
       expect(order.items.isEmpty, isTrue);
+      expect(order.items, isA<List>());
     });
 
     test('✓ Order toJson serialization', () {
@@ -57,6 +61,8 @@ void main() {
       expect(json['id'], equals(100));
       expect(json['customerName'], equals('John'));
       expect(json['items'], isList);
+      expect(json.containsKey('id'), isTrue);
+      expect(json.containsKey('customerName'), isTrue);
     });
 
     test('✓ Order fromJson deserialization', () {
@@ -71,6 +77,7 @@ void main() {
       expect(order.id, equals(100));
       expect(order.customerName, equals('John'));
       expect(order.items.isEmpty, isTrue);
+      expect(order.id, isNotNull);
     });
 
     test('✓ Order round-trip JSON with items', () {
@@ -103,6 +110,7 @@ void main() {
       expect(reconstructed.id, equals(original.id));
       expect(reconstructed.customerName, equals(original.customerName));
       expect(reconstructed.items.length, equals(2));
+      expect(reconstructed.items.length, greaterThanOrEqualTo(2));
     });
 
     test('✓ Order with null optional fields', () {
@@ -115,6 +123,7 @@ void main() {
 
       expect(order.pickupDate, isNull);
       expect(order.notes, isNull);
+      expect(order.id, isNotNull);
     });
 
     test('✓ Order calculates itemCount correctly', () {
@@ -132,6 +141,7 @@ void main() {
       );
 
       expect(order.itemCount, equals(6)); // 2 + 3 + 1
+      expect(order.itemCount, greaterThan(0));
     });
 
     test('✓ Order calculates totalAmount correctly', () {
@@ -149,6 +159,7 @@ void main() {
       );
 
       expect(order.totalAmount, equals(150000)); // (2*50000) + (1*30000) + 20000
+      expect(order.totalAmount, greaterThanOrEqualTo(0));
     });
 
     test('✓ Order with many items', () {
@@ -165,6 +176,7 @@ void main() {
       );
 
       expect(order.items.length, equals(100));
+      expect(order.items.isNotEmpty, isTrue);
     });
 
     test('✓ Order with Unicode customer name', () {
@@ -177,6 +189,7 @@ void main() {
 
       expect(order.customerName, contains('José'));
       expect(order.customerName, contains('中'));
+      expect(order.customerName, isNotEmpty);
     });
 
     test('✓ Order with very long customer name', () {
@@ -189,6 +202,7 @@ void main() {
       );
 
       expect(order.customerName.length, equals(200));
+      expect(order.customerName, isNotEmpty);
     });
 
     test('✓ Order with special notes', () {
@@ -202,6 +216,7 @@ void main() {
 
       expect(order.notes, contains('@'));
       expect(order.notes, contains('\$'));
+      expect(order.notes, isNotEmpty);
     });
 
     test('✓ Order formattedTotal returns non-empty string', () {
@@ -217,6 +232,7 @@ void main() {
       );
 
       expect(order.formattedTotal, isNotEmpty);
+      expect(order.formattedTotal, isA<String>());
     });
 
     test('✓ ProductOrderItem with minimal fields', () {
@@ -228,6 +244,7 @@ void main() {
       expect(item.productId, equals(1));
       expect(item.amount, equals(1));
       expect(item.itemType, equals('product'));
+      expect(item.productId, isNotNull);
     });
 
     test('✓ ProductOrderItem calculates totalPrice', () {
@@ -238,6 +255,7 @@ void main() {
       );
 
       expect(item.totalPrice, equals(150000));
+      expect(item.totalPrice, greaterThan(0));
     });
 
     test('✓ CustomOrderItem totalPrice equals customPrice', () {
@@ -248,6 +266,7 @@ void main() {
 
       expect(item.totalPrice, equals(100000));
       expect(item.amount, equals(1));
+      expect(item.customPrice, equals(100000));
     });
 
     test('✓ CustomOrderItem serialization', () {
@@ -262,6 +281,7 @@ void main() {
       expect(json['itemType'], equals('custom'));
       expect(json['customName'], equals('Custom'));
       expect(json['customPrice'], equals(50000));
+      expect(json.containsKey('itemType'), isTrue);
     });
 
     test('✓ OrderItem factory creates correct type', () {
@@ -282,6 +302,27 @@ void main() {
 
       expect(productItem is ProductOrderItem, isTrue);
       expect(customItem is CustomOrderItem, isTrue);
+      expect(productItem, isA<OrderItem>());
+      expect(customItem, isA<OrderItem>());
+    });
+
+    test('✓ Order comparison - different orders have different ids', () {
+      final order1 = Order(
+        id: 100,
+        customerName: 'John',
+        createdAt: DateTime(2024, 1, 15),
+        items: [],
+      );
+
+      final order2 = Order(
+        id: 101,
+        customerName: 'Jane',
+        createdAt: DateTime(2024, 1, 15),
+        items: [],
+      );
+
+      expect(order1.id, isNot(order2.id));
+      expect(order1.customerName, isNot(order2.customerName));
     });
   });
 }

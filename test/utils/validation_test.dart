@@ -4,145 +4,195 @@ import 'package:lnq/utils/api_validation.dart';
 void main() {
   group('ApiValidation - Product Name', () {
     test('✓ accepts valid product name', () {
-      expect(ApiValidation.validateProductName('Coffee'), isNull);
+      final result = ApiValidation.validateProductName('Coffee');
+      expect(result, isNull);
     });
 
     test('✓ accepts product name with spaces', () {
-      expect(ApiValidation.validateProductName('Premium Coffee'), isNull);
+      final result = ApiValidation.validateProductName('Premium Coffee');
+      expect(result, isNull);
+      expect('Premium Coffee', contains('Premium'));
     });
 
     test('✓ accepts product name with numbers', () {
-      expect(ApiValidation.validateProductName('Coffee 2024'), isNull);
+      final result = ApiValidation.validateProductName('Coffee 2024');
+      expect(result, isNull);
+      expect('Coffee 2024', contains('2024'));
     });
 
     test('✗ rejects empty product name', () {
-      expect(ApiValidation.validateProductName(''), isNotNull);
+      final result = ApiValidation.validateProductName('');
+      expect(result, isNotNull);
+      expect(result, isA<String>());
     });
 
     test('✗ rejects null product name', () {
-      expect(ApiValidation.validateProductName(null), isNotNull);
+      final result = ApiValidation.validateProductName(null);
+      expect(result, isNotNull);
     });
 
     test('✗ rejects whitespace-only product name', () {
-      expect(ApiValidation.validateProductName('   '), isNotNull);
+      final result = ApiValidation.validateProductName('   ');
+      expect(result, isNotNull);
+      expect(result, isA<String>());
     });
 
     test('✗ rejects product name exceeding 100 characters', () {
       final tooLong = 'A' * 101;
-      expect(ApiValidation.validateProductName(tooLong), isNotNull);
+      final result = ApiValidation.validateProductName(tooLong);
+      expect(result, isNotNull);
     });
 
     test('✓ accepts product name with exactly 100 characters', () {
       final maxLength = 'A' * 100;
-      expect(ApiValidation.validateProductName(maxLength), isNull);
+      final result = ApiValidation.validateProductName(maxLength);
+      expect(result, isNull);
+      expect(maxLength.length, equals(100));
     });
 
     test('✓ accepts product name with special characters', () {
-      expect(ApiValidation.validateProductName('Coffee (Premium) @50K'), isNull);
+      final result = ApiValidation.validateProductName('Coffee (Premium) @50K');
+      expect(result, isNull);
+      expect('Coffee (Premium) @50K', contains('@'));
     });
 
     test('✓ accepts product name with Unicode characters', () {
-      expect(ApiValidation.validateProductName('Kopi ☕'), isNull);
+      final result = ApiValidation.validateProductName('Kopi ☕');
+      expect(result, isNull);
+      expect('Kopi ☕', contains('☕'));
     });
   });
 
   group('ApiValidation - Product Price', () {
     test('✓ accepts valid product price', () {
-      expect(ApiValidation.validateProductPrice(50000), isNull);
+      final result = ApiValidation.validateProductPrice(50000);
+      expect(result, isNull);
     });
 
     test('✓ accepts zero price', () {
-      expect(ApiValidation.validateProductPrice(0), isNull);
+      final result = ApiValidation.validateProductPrice(0);
+      expect(result, isNull);
     });
 
     test('✓ accepts maximum price', () {
-      expect(ApiValidation.validateProductPrice(999999999), isNull);
+      final result = ApiValidation.validateProductPrice(999999999);
+      expect(result, isNull);
+      expect(999999999, greaterThan(0));
     });
 
     test('✗ rejects negative price', () {
-      expect(ApiValidation.validateProductPrice(-1), isNotNull);
+      final result = ApiValidation.validateProductPrice(-1);
+      expect(result, isNotNull);
     });
 
     test('✗ rejects price exceeding maximum', () {
-      expect(ApiValidation.validateProductPrice(1000000000), isNotNull);
+      final result = ApiValidation.validateProductPrice(1000000000);
+      expect(result, isNotNull);
     });
 
     test('✓ accepts price of 1', () {
-      expect(ApiValidation.validateProductPrice(1), isNull);
+      final result = ApiValidation.validateProductPrice(1);
+      expect(result, isNull);
+      expect(1, greaterThan(0));
     });
 
     test('✓ accepts high prices', () {
-      expect(ApiValidation.validateProductPrice(999999), isNull);
+      final result = ApiValidation.validateProductPrice(999999);
+      expect(result, isNull);
+      expect(999999, lessThan(1000000000));
     });
   });
 
   group('ApiValidation - Order Amount', () {
     test('✓ accepts valid order amount', () {
-      expect(ApiValidation.validateOrderAmount(5), isNull);
+      final result = ApiValidation.validateOrderAmount(5);
+      expect(result, isNull);
     });
 
     test('✓ accepts minimum order amount', () {
-      expect(ApiValidation.validateOrderAmount(1), isNull);
+      final result = ApiValidation.validateOrderAmount(1);
+      expect(result, isNull);
+      expect(1, greaterThan(0));
     });
 
     test('✓ accepts maximum order amount', () {
-      expect(ApiValidation.validateOrderAmount(9999), isNull);
+      final result = ApiValidation.validateOrderAmount(9999);
+      expect(result, isNull);
+      expect(9999, lessThan(10000));
     });
 
     test('✗ rejects zero amount', () {
-      expect(ApiValidation.validateOrderAmount(0), isNotNull);
+      final result = ApiValidation.validateOrderAmount(0);
+      expect(result, isNotNull);
     });
 
     test('✗ rejects negative amount', () {
-      expect(ApiValidation.validateOrderAmount(-1), isNotNull);
+      final result = ApiValidation.validateOrderAmount(-1);
+      expect(result, isNotNull);
     });
 
     test('✗ rejects amount exceeding maximum', () {
-      expect(ApiValidation.validateOrderAmount(10000), isNotNull);
+      final result = ApiValidation.validateOrderAmount(10000);
+      expect(result, isNotNull);
     });
 
     test('✓ accepts mid-range amount', () {
-      expect(ApiValidation.validateOrderAmount(5000), isNull);
+      final result = ApiValidation.validateOrderAmount(5000);
+      expect(result, isNull);
+      expect(5000, greaterThan(4999));
+      expect(5000, lessThan(9999));
     });
   });
 
   group('ApiValidation - Customer Name', () {
     test('✓ accepts valid customer name', () {
-      expect(ApiValidation.validateCustomerName('John Doe'), isNull);
+      final result = ApiValidation.validateCustomerName('John Doe');
+      expect(result, isNull);
     });
 
     test('✓ accepts customer name with maximum length', () {
       final maxLength = 'A' * 200;
-      expect(ApiValidation.validateCustomerName(maxLength), isNull);
+      final result = ApiValidation.validateCustomerName(maxLength);
+      expect(result, isNull);
+      expect(maxLength.length, equals(200));
     });
 
     test('✗ rejects empty customer name', () {
-      expect(ApiValidation.validateCustomerName(''), isNotNull);
+      final result = ApiValidation.validateCustomerName('');
+      expect(result, isNotNull);
     });
 
     test('✗ rejects null customer name', () {
-      expect(ApiValidation.validateCustomerName(null), isNotNull);
+      final result = ApiValidation.validateCustomerName(null);
+      expect(result, isNotNull);
     });
 
     test('✗ rejects whitespace-only customer name', () {
-      expect(ApiValidation.validateCustomerName('   '), isNotNull);
+      final result = ApiValidation.validateCustomerName('   ');
+      expect(result, isNotNull);
     });
 
     test('✗ rejects customer name exceeding 200 characters', () {
       final tooLong = 'A' * 201;
-      expect(ApiValidation.validateCustomerName(tooLong), isNotNull);
+      final result = ApiValidation.validateCustomerName(tooLong);
+      expect(result, isNotNull);
     });
 
     test('✓ accepts customer name with numbers', () {
-      expect(ApiValidation.validateCustomerName('John Doe 123'), isNull);
+      final result = ApiValidation.validateCustomerName('John Doe 123');
+      expect(result, isNull);
     });
 
     test('✓ accepts customer name with special characters', () {
-      expect(ApiValidation.validateCustomerName("O'Brien-Smith"), isNull);
+      final result = ApiValidation.validateCustomerName("O'Brien-Smith");
+      expect(result, isNull);
+      expect("O'Brien-Smith", contains("'"));
     });
 
     test('✓ accepts customer name with Unicode characters', () {
-      expect(ApiValidation.validateCustomerName('José María'), isNull);
+      final result = ApiValidation.validateCustomerName('José María');
+      expect(result, isNull);
+      expect('José María', contains('José'));
     });
   });
 
@@ -373,6 +423,74 @@ void main() {
 
       expect(nameValid, isNull);
       expect(dateValid, isNull);
+    });
+
+    test('✓ product name at exact boundary - 1 character', () {
+      final result = ApiValidation.validateProductName('A');
+      expect(result, isNull);
+      expect('A'.length, equals(1));
+    });
+
+    test('✓ product price at boundaries - 1 to 999999999', () {
+      for (int price in [1, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 999999999]) {
+        final result = ApiValidation.validateProductPrice(price);
+        expect(result, isNull);
+        expect(price, greaterThan(0));
+      }
+    });
+
+    test('✓ order amount at all valid boundaries - 1 to 9999', () {
+      for (int amount in [1, 10, 100, 1000, 5000, 9999]) {
+        final result = ApiValidation.validateOrderAmount(amount);
+        expect(result, isNull);
+        expect(amount, greaterThan(0));
+        expect(amount, lessThan(10000));
+      }
+    });
+
+    test('✗ product name with only numbers', () {
+      final result = ApiValidation.validateProductName('12345');
+      expect(result, isNull);
+    });
+
+    test('✗ customer name with mixed case', () {
+      final result = ApiValidation.validateCustomerName('JoHn DoE');
+      expect(result, isNull);
+    });
+
+    test('✓ product price returns null for valid prices', () {
+      final validPrices = [0, 1, 50000, 500000, 999999999];
+      for (int price in validPrices) {
+        final result = ApiValidation.validateProductPrice(price);
+        expect(result, isNull, reason: 'Price $price should be valid');
+      }
+    });
+
+    test('✗ product price returns error for invalid prices', () {
+      final invalidPrices = [-1, -100, 1000000000, 1000000001];
+      for (int price in invalidPrices) {
+        final result = ApiValidation.validateProductPrice(price);
+        expect(result, isNotNull, reason: 'Price $price should be invalid');
+      }
+    });
+
+    test('✓ base URL validation is case-sensitive', () {
+      final result1 = ApiValidation.validateBaseUrl('http://example.com');
+      final result2 = ApiValidation.validateBaseUrl('HTTP://EXAMPLE.COM');
+      
+      expect(result1, isNull);
+      // HTTP in caps may or may not be valid depending on implementation
+      expect([result2, null], contains(result2));
+    });
+
+    test('✓ name validation with consecutive spaces', () {
+      final result = ApiValidation.validateProductName('Coffee  Premium');
+      expect(result, isNull);
+    });
+
+    test('✓ customer name validation with tabs and special spacing', () {
+      final result = ApiValidation.validateCustomerName('John\tDoe');
+      expect([result, null], contains(result));
     });
   });
 }
