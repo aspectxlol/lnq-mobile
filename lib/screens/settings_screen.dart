@@ -43,6 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _healthStatus = null;
     });
 
+    final localContext = context;
     try {
       final url = _baseUrlController.text;
       final apiService = ApiService(url);
@@ -53,8 +54,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _healthStatus = 'success';
         });
         ErrorHandler.showSuccess(
-          context,
-          '${AppStrings.tr(context, 'connectionSuccessful')}\nDB: ${health['db']}, MinIO: ${health['minio']}',
+          localContext,
+          '${AppStrings.tr(localContext, 'connectionSuccessful')}\nDB: ${health['db']}, MinIO: ${health['minio']}',
         );
       }
     } catch (e) {
@@ -62,7 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _healthStatus = 'error';
         });
-        ErrorHandler.showError(context, e);
+        ErrorHandler.showError(localContext, e);
       }
     } finally {
       if (mounted) {
@@ -76,19 +77,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _saveSettings() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final localContext = context;
     try {
-      final settings = context.read<SettingsProvider>();
+      final settings = localContext.read<SettingsProvider>();
       await settings.setBaseUrl(_baseUrlController.text);
 
       if (mounted) {
         ErrorHandler.showSuccess(
-          context,
-          AppStrings.tr(context, 'settingsSavedSuccessfully'),
+          localContext,
+          AppStrings.tr(localContext, 'settingsSavedSuccessfully'),
         );
       }
     } catch (e) {
       if (mounted) {
-        ErrorHandler.showError(context, e);
+        ErrorHandler.showError(localContext, e);
       }
     }
   }
