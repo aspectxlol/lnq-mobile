@@ -12,7 +12,7 @@ class LabeledValueRow extends StatelessWidget {
   final bool expandLabel;
 
   const LabeledValueRow({
-    Key? key,
+    super.key,
     required this.label,
     required this.value,
     this.labelStyle,
@@ -22,7 +22,7 @@ class LabeledValueRow extends StatelessWidget {
     this.labelMaxLines,
     this.valueMaxLines,
     this.expandLabel = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

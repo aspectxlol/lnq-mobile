@@ -12,11 +12,11 @@ class AddProductDialog extends StatefulWidget {
   final void Function(OrderItemData) onAddItem;
 
   const AddProductDialog({
-    Key? key,
+    super.key,
     required this.availableProducts,
     required this.selectedProductIds,
     required this.onAddItem,
-  }) : super(key: key);
+  });
 
   @override
   State<AddProductDialog> createState() => _AddProductDialogState();
@@ -49,7 +49,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DropdownButtonFormField<Product>(
-              value: selectedProduct,
+              initialValue: selectedProduct,
               decoration: InputDecoration(
                 labelText: AppStrings.getString(locale, 'selectProduct'),
                 prefixIcon: const Icon(Icons.shopping_bag),

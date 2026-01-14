@@ -625,7 +625,7 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 500));
 
-      final longUrl = 'https://' + 'x' * 400 + '.com:8080/path';
+      final longUrl = 'https://${'x' * 400}.com:8080/path';
       final textField = find.byType(TextFormField).first;
       await tester.enterText(textField, longUrl);
       await tester.pump(const Duration(milliseconds: 300));

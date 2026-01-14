@@ -11,7 +11,7 @@ class NoteContainer extends StatelessWidget {
   final BorderRadius? borderRadius;
 
   const NoteContainer({
-    Key? key,
+    super.key,
     required this.note,
     this.textStyle,
     this.padding,
@@ -19,7 +19,7 @@ class NoteContainer extends StatelessWidget {
     this.backgroundColor,
     this.iconColor,
     this.borderRadius,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -11,7 +11,7 @@ import 'info_row.dart';
 class OrderCard extends StatelessWidget {
   final Order order;
   final VoidCallback onTap;
-  const OrderCard({Key? key, required this.order, required this.onTap}) : super(key: key);
+  const OrderCard({super.key, required this.order, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +28,7 @@ class OrderCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: order.pickupDate != null ? AppColors.success.withOpacity(0.2) : AppColors.secondary.withOpacity(0.2),
+                  color: order.pickupDate != null ? AppColors.success.withValues(alpha: 0.2) : AppColors.secondary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: order.pickupDate != null ? AppColors.success : AppColors.secondary,

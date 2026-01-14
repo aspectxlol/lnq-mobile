@@ -104,7 +104,7 @@ class _MainScreenState extends State<MainScreen>
           selectedIndex: _currentIndex,
           onDestinationSelected: _onTabTapped,
           backgroundColor: AppColors.card,
-          indicatorColor: AppColors.primary.withOpacity(0.2),
+          indicatorColor: AppColors.primary.withValues(alpha: 0.2),
           height: 70,
           destinations: const [
             NavigationDestination(

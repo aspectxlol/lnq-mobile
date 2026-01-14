@@ -8,12 +8,12 @@ class ProductDropdownItem extends StatelessWidget {
   final TextStyle? priceStyle;
 
   const ProductDropdownItem({
-    Key? key,
+    super.key,
     required this.name,
     required this.price,
     this.nameStyle,
     this.priceStyle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

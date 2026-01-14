@@ -11,14 +11,14 @@ class DateRangeFilter extends StatelessWidget {
   final ValueChanged<DateTimeRange?> onPickupDateChanged;
 
   const DateRangeFilter({
-    Key? key,
+    super.key,
     required this.activeFilter,
     required this.createdDateRange,
     required this.pickupDateRange,
     required this.onFilterChanged,
     required this.onCreatedDateChanged,
     required this.onPickupDateChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -64,10 +64,10 @@ class DateRangePickerButton extends StatelessWidget {
   final ValueChanged<DateTimeRange?> onDateChanged;
 
   const DateRangePickerButton({
-    Key? key,
+    super.key,
     required this.dateRange,
     required this.onDateChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

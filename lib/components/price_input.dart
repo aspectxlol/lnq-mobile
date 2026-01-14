@@ -11,7 +11,7 @@ class PriceInput extends StatefulWidget {
   final bool enabled;
 
   const PriceInput({
-    Key? key,
+    super.key,
     required this.controller,
     required this.labelText,
     this.helperText,
@@ -19,7 +19,7 @@ class PriceInput extends StatefulWidget {
     this.validator,
     this.prefixText = 'Rp ',
     this.enabled = true,
-  }) : super(key: key);
+  });
 
   @override
   State<PriceInput> createState() => _PriceInputState();

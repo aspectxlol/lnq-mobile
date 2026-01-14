@@ -7,7 +7,7 @@ import '../widgets/note_container.dart';
 class OrderItemRow extends StatelessWidget {
   final OrderItem item;
 
-  const OrderItemRow({Key? key, required this.item}) : super(key: key);
+  const OrderItemRow({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {

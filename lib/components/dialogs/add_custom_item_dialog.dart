@@ -6,9 +6,9 @@ class AddCustomItemDialog extends StatefulWidget {
   final void Function(OrderItemData) onAddItem;
 
   const AddCustomItemDialog({
-    Key? key,
+    super.key,
     required this.onAddItem,
-  }) : super(key: key);
+  });
 
   @override
   State<AddCustomItemDialog> createState() => _AddCustomItemDialogState();

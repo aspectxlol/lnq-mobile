@@ -481,7 +481,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                 ),
                               ),
                             );
-                          }).toList(),
+                          }),
                         ],
                       ],
                     ),
@@ -546,14 +546,14 @@ class ProductOrderItemCard extends StatelessWidget {
   final VoidCallback onDecrement;
 
   const ProductOrderItemCard({
-    Key? key,
+    super.key,
     required this.product,
     required this.quantity,
     required this.price,
     this.notes,
     required this.onIncrement,
     required this.onDecrement,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

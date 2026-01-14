@@ -149,7 +149,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           Row(
                             children: [
                               CircleAvatar(
-                                backgroundColor: AppColors.primary.withOpacity(0.1),
+                                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                                 child: Icon(Icons.person, color: AppColors.primary),
                               ),
                               const SizedBox(width: 12),
@@ -237,7 +237,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
                   child: Card(
-                    color: AppColors.primary.withOpacity(0.08),
+                    color: AppColors.primary.withValues(alpha: 0.08),
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     child: Padding(

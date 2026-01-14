@@ -9,13 +9,13 @@ class ProductImage extends StatelessWidget {
   final BorderRadius borderRadius;
 
   const ProductImage({
-    Key? key,
+    super.key,
     required this.imageUrl,
     required this.width,
     required this.height,
     required this.iconSize,
     required this.borderRadius,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +67,7 @@ class ProductDescriptionColumn extends StatelessWidget {
   final double? spacing;
 
   const ProductDescriptionColumn({
-    Key? key,
+    super.key,
     required this.name,
     this.description,
     required this.price,
@@ -78,7 +78,7 @@ class ProductDescriptionColumn extends StatelessWidget {
     this.descriptionMaxLines = 2,
     this.priceMaxLines = 1,
     this.spacing,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

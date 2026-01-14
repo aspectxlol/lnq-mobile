@@ -11,7 +11,7 @@ import 'price_input.dart';
 
 class EditOrderScreen extends StatefulWidget {
   final Order order;
-  const EditOrderScreen({Key? key, required this.order}) : super(key: key);
+  const EditOrderScreen({super.key, required this.order});
 
   @override
   State<EditOrderScreen> createState() => _EditOrderScreenState();
@@ -83,7 +83,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                     const SizedBox(height: 16),
                     if (!custom) ...[
                       DropdownButtonFormField<int>(
-                        value: selectedProductId,
+                        initialValue: selectedProductId,
                         items: products
                             .map(
                               (p) => DropdownMenuItem(
@@ -302,20 +302,20 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  AppColors.primary.withOpacity(0.10),
-                                  AppColors.primary.withOpacity(0.05),
+                                  AppColors.primary.withValues(alpha: 0.10),
+                                  AppColors.primary.withValues(alpha: 0.05),
                                 ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
                               border: Border.all(
-                                color: AppColors.primary.withOpacity(0.18),
+                                color: AppColors.primary.withValues(alpha: 0.18),
                                 width: 1.5,
                               ),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.08),
+                                  color: AppColors.primary.withValues(alpha: 0.08),
                                   blurRadius: 16,
                                   offset: const Offset(0, 8),
                                 ),
@@ -392,7 +392,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                                       ),
                                     ),
                                   );
-                                }).toList(),
+                                }),
                                 const SizedBox(height: 12),
                                 Row(
                                   children: [

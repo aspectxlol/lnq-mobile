@@ -110,7 +110,7 @@ class _SortFilterDialogState extends State<_SortFilterDialog> {
               ),
               const SizedBox(height: 20),
               DropdownButtonFormField<String>(
-                value: _sortField,
+                initialValue: _sortField,
                 decoration: InputDecoration(
                   labelText: AppStrings.trWatch(context, 'sortBy'),
                   border: const OutlineInputBorder(),
@@ -338,8 +338,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
             _loadOrders();
           }
         },
-        child: const Icon(Icons.add),
         tooltip: AppStrings.trWatch(context, 'createOrder'),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -375,10 +375,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
       int cmp = 0;
       switch (_sortField) {
         case 'pickupDate':
-          if (a.pickupDate == null && b.pickupDate == null) cmp = 0;
-          else if (a.pickupDate == null) cmp = 1;
-          else if (b.pickupDate == null) cmp = -1;
-          else cmp = a.pickupDate!.compareTo(b.pickupDate!);
+          if (a.pickupDate == null && b.pickupDate == null) {
+            cmp = 0;
+          } else if (a.pickupDate == null) {
+            cmp = 1;
+          } else if (b.pickupDate == null) {
+            cmp = -1;
+          } else {
+            cmp = a.pickupDate!.compareTo(b.pickupDate!);
+          }
           break;
         case 'createdAt':
           cmp = a.createdAt.compareTo(b.createdAt);
@@ -464,7 +469,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       shape: BoxShape.circle,
                     ),
                     todayDecoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                       shape: BoxShape.circle,
                     ),
                     markerDecoration: BoxDecoration(
@@ -514,7 +519,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(

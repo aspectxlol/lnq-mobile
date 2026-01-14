@@ -9,7 +9,7 @@ import '../widgets/product_widgets.dart';
 
 class ProductListItem extends StatelessWidget {
   final Product product;
-  const ProductListItem({Key? key, required this.product}) : super(key: key);
+  const ProductListItem({super.key, required this.product});
 
   @override
   Widget build(BuildContext context) {
