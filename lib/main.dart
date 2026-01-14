@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:lnq/models/product.dart';
-import 'package:lnq/screens/product_details_screen.dart';
+import 'package:lnq/screens/products/product_details_screen.dart';
+import 'package:lnq/screens/products/create_product_screen.dart';
+import 'package:lnq/screens/products/edit_product_screen.dart';
 import 'package:provider/provider.dart';
 import 'constants/app_constants.dart';
 import 'providers/settings_provider.dart';
 import 'theme/app_theme.dart';
-import 'screens/products_screen.dart';
-import 'screens/orders_screen.dart';
-import 'screens/settings_screen.dart';
+import 'screens/products/products_screen.dart';
+import 'screens/orders/orders_screen.dart';
+import 'screens/settings/settings_screen.dart';
 
 void main() {
   runApp(
@@ -36,6 +38,17 @@ class MyApp extends StatelessWidget {
           final product = settings.arguments as Product;
           return MaterialPageRoute(
             builder: (context) => ProductDetailsScreen(product: product),
+          );
+        }
+        if (settings.name == '/create_product') {
+          return MaterialPageRoute(
+            builder: (context) => const CreateProductScreen(),
+          );
+        }
+        if (settings.name == '/edit_product') {
+          final product = settings.arguments as Product;
+          return MaterialPageRoute(
+            builder: (context) => EditProductScreen(product: product),
           );
         }
         // Add other dynamic routes here if needed

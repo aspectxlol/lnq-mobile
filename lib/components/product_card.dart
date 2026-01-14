@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_theme.dart';
-import '../screens/product_details_screen.dart';
+import '../screens/products/product_details_screen.dart';
 import 'package:provider/provider.dart';
 import '../widgets/animated_widgets.dart';
 import '../widgets/product_widgets.dart';
@@ -21,7 +21,7 @@ class ProductCard extends StatelessWidget {
       tag: 'product-${product.id}',
       child: AnimatedCard(
         onTap: () {
-          Navigator.push(
+          Navigator.push( 
             context,
             MaterialPageRoute(
               builder: (context) => ProductDetailsScreen(product: product),

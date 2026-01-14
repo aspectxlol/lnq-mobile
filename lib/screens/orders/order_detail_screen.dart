@@ -1,17 +1,16 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../models/order.dart';
-import '../providers/settings_provider.dart';
-import '../components/edit_order_screen.dart';
-import '../components/order_item_row.dart';
-import '../theme/app_theme.dart';
-import '../l10n/strings.dart';
-import '../utils/currency_utils.dart';
-import '../utils/state_extension.dart';
-import '../utils/error_handler.dart';
-import '../widgets/confirmation_dialog.dart';
+import '../../models/order.dart';
+import '../../providers/settings_provider.dart';
+import '../../components/edit_order_screen.dart';
+import '../../components/order_item_row.dart';
+import '../../theme/app_theme.dart';
+import '../../l10n/strings.dart';
+import '../../utils/currency_utils.dart';
+import '../../utils/state_extension.dart';
+import '../../utils/error_handler.dart';
+import '../../widgets/confirmation_dialog.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final int orderId;

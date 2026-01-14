@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../l10n/strings.dart';
-import '../providers/settings_provider.dart';
-import '../services/api_service.dart';
-import '../widgets/animated_widgets.dart';
-import '../theme/app_theme.dart';
-import '../components/info_row.dart';
-import '../widgets/screen_scaffold.dart';
-import '../utils/error_handler.dart';
+import '../../l10n/strings.dart';
+import '../../providers/settings_provider.dart';
+import '../../services/api_service.dart';
+import '../../widgets/animated_widgets.dart';
+import '../../theme/app_theme.dart';
+import '../../components/info_row.dart';
+import '../../widgets/screen_scaffold.dart';
+import '../../utils/error_handler.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -55,7 +55,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
         ErrorHandler.showSuccess(
           localContext,
-          '${AppStrings.tr(localContext, 'connectionSuccessful')}\nDB: ${health['db']}, MinIO: ${health['minio']}',
+          '${AppStrings.tr(localContext, 'connectionSuccessful')}\nDB: ${health['db']}, MinIO: ${health['minio']}',
         );
       }
     } catch (e) {
@@ -404,4 +404,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
-

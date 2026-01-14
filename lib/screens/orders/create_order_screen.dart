@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../models/product.dart';
-import '../models/create_order_request.dart';
-import '../models/order_item_data.dart';
-import '../widgets/skeleton_loader.dart';
-import '../widgets/empty_state.dart';
-import '../widgets/animated_widgets.dart';
-import '../theme/app_theme.dart';
-import '../theme/app_animations.dart';
-import '../components/dialogs/add_product_dialog.dart';
-import '../components/dialogs/add_custom_item_dialog.dart';
-import '../components/quantity_selector.dart';
-import '../widgets/labeled_value_row.dart';
-import '../widgets/note_container.dart';
-import '../l10n/strings.dart';
-import '../utils/data_loader_extension.dart';
+import '../../models/product.dart';
+import '../../models/create_order_request.dart';
+import '../../models/order_item_data.dart';
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/animated_widgets.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/app_animations.dart';
+import '../../components/dialogs/add_product_dialog.dart';
+import '../../components/dialogs/add_custom_item_dialog.dart';
+import '../../components/quantity_selector.dart';
+import '../../widgets/labeled_value_row.dart';
+import '../../widgets/note_container.dart';
+import '../../l10n/strings.dart';
+import '../../utils/data_loader_extension.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   const CreateOrderScreen({super.key});
@@ -30,7 +30,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   late Future<List<Product>> _productsFuture;
 
   DateTime? _pickupDate;
-  final List<OrderItemData> _orderItems = []; // Unified list for both product and custom items
+  final List<OrderItemData> _orderItems = [];
   bool _isCreating = false;
 
   @override
@@ -51,6 +51,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     _orderNotesController.dispose();
     super.dispose();
   }
+
   Future<void> _selectPickupDate() async {
     final date = await showDatePicker(
       context: context,
@@ -186,6 +187,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     }
     return total;
   }
+
   void _showAddCustomItemDialog() {
     showDialog(
       context: context,
@@ -284,22 +286,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                           child: TextFormField(
                             controller: _customerNameController,
                             decoration: InputDecoration(
-                              labelText: AppStrings.trWatch(
-                                context,
-                                'customerName',
-                              ),
-                              hintText: AppStrings.trWatch(
-                                context,
-                                'enterCustomerName',
-                              ),
+                              labelText: AppStrings.trWatch(context, 'customerName'),
+                              hintText: AppStrings.trWatch(context, 'enterCustomerName'),
                               prefixIcon: const Icon(Icons.person_outline),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return AppStrings.trWatch(
-                                  context,
-                                  'pleaseEnterCustomerName',
-                                );
+                                return AppStrings.trWatch(context, 'pleaseEnterCustomerName');
                               }
                               return null;
                             },
@@ -326,25 +319,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                             borderRadius: BorderRadius.circular(8),
                             child: InputDecorator(
                               decoration: InputDecoration(
-                                labelText: AppStrings.trWatch(
-                                  context,
-                                  'pickupDateOptional',
-                                ),
+                                labelText: AppStrings.trWatch(context, 'pickupDateOptional'),
                                 prefixIcon: const Icon(Icons.calendar_today),
-                                suffixIcon: const Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                ),
+                                suffixIcon: const Icon(Icons.arrow_forward_ios, size: 16),
                               ),
                               child: Text(
                                 _pickupDate != null
-                                    ? DateFormat(
-                                        'MMM dd, yyyy',
-                                      ).format(_pickupDate!)
-                                    : AppStrings.trWatch(
-                                        context,
-                                        'noPickupDateSet',
-                                      ),
+                                    ? DateFormat('MMM dd, yyyy').format(_pickupDate!)
+                                    : AppStrings.trWatch(context, 'noPickupDateSet'),
                                 style: TextStyle(
                                   color: _pickupDate != null
                                       ? AppColors.foreground
@@ -392,36 +374,16 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                 child: Center(
                                   child: Column(
                                     children: [
-                                      Icon(
-                                        Icons.shopping_cart_outlined,
-                                        size: 48,
-                                        color: AppColors.mutedForeground,
-                                      ),
+                                      Icon(Icons.shopping_cart_outlined, size: 48, color: AppColors.mutedForeground),
                                       const SizedBox(height: 16),
                                       Text(
-                                        AppStrings.trWatch(
-                                          context,
-                                          'noItemsAdded',
-                                        ),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              color: AppColors.mutedForeground,
-                                            ),
+                                        AppStrings.trWatch(context, 'noItemsAdded'),
+                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.mutedForeground),
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        AppStrings.trWatch(
-                                          context,
-                                          'tapAddItem',
-                                        ),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color: AppColors.mutedForeground,
-                                            ),
+                                        AppStrings.trWatch(context, 'tapAddItem'),
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.mutedForeground),
                                       ),
                                     ],
                                   ),
@@ -458,8 +420,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                                 Text(item.customName ?? '', style: Theme.of(context).textTheme.titleMedium),
                                                 const SizedBox(height: 4),
                                                 Text(
-                                                  'Rp ${item.customPrice.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}'
-                                                  ' × ${item.amount}',
+                                                  'Rp ${item.customPrice.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')} × ${item.amount}',
                                                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
                                                 ),
                                               ],
@@ -536,7 +497,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   }
 }
 
-// --- Extracted reusable widget for product order item card ---
 class ProductOrderItemCard extends StatelessWidget {
   final Product product;
   final int quantity;
@@ -582,8 +542,7 @@ class ProductOrderItemCard extends StatelessWidget {
                       Text(product.name, style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 4),
                       Text(
-                        'Rp ${price.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}'
-                        ' × $quantity',
+                        'Rp ${price.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')} × $quantity',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
                       ),
                     ],

@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lnq/providers/settings_provider.dart';
-import 'package:lnq/screens/settings_screen.dart';
+import 'package:lnq/screens/settings/settings_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

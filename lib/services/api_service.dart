@@ -185,19 +185,45 @@ class ApiService {
     int? price,
     String? description,
     String? imageId,
+    List<int>? imageBytes,
+    String? imageFilename,
   }) async {
     try {
-      final body = <String, dynamic>{};
-      if (name != null) body['name'] = name;
-      if (price != null) body['price'] = price;
-      if (description != null) body['description'] = description;
-      if (imageId != null) body['imageId'] = imageId;
+      http.Response response;
+      
+      if (imageBytes != null && imageFilename != null) {
+        // Upload with new image
+        var request = http.MultipartRequest(
+          'PUT',
+          Uri.parse('$baseUrl/api/products/$id'),
+        );
+        if (name != null) request.fields['name'] = name;
+        if (price != null) request.fields['price'] = price.toString();
+        if (description != null) request.fields['description'] = description;
+        if (imageId != null) request.fields['imageId'] = imageId;
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'image',
+            imageBytes,
+            filename: imageFilename,
+          ),
+        );
+        var streamedResponse = await request.send();
+        response = await http.Response.fromStream(streamedResponse);
+      } else {
+        // Update without new image
+        final body = <String, dynamic>{};
+        if (name != null) body['name'] = name;
+        if (price != null) body['price'] = price;
+        if (description != null) body['description'] = description;
+        if (imageId != null) body['imageId'] = imageId;
 
-      final response = await http.put(
-        Uri.parse('$baseUrl/api/products/$id'),
-        headers: _headers,
-        body: json.encode(body),
-      );
+        response = await http.put(
+          Uri.parse('$baseUrl/api/products/$id'),
+          headers: _headers,
+          body: json.encode(body),
+        );
+      }
 
       return await _handleResponse(
         response,
