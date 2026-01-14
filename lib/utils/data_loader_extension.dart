@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/strings.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/api_service.dart';
@@ -24,7 +25,7 @@ extension DataLoaderExtension on State {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text('${AppStrings.tr(context, 'error')}: $e')),
         );
       }
       return null;

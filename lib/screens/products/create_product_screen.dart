@@ -4,6 +4,9 @@ import 'dart:io';
 import '../../l10n/strings.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/data_loader_extension.dart';
+import '../../components/image_picker_widget.dart';
+import '../../components/product_form_fields.dart';
+import '../../utils/snackbar_util.dart';
 
 class CreateProductScreen extends StatefulWidget {
   const CreateProductScreen({super.key});
@@ -83,24 +86,18 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppStrings.tr(context, 'productCreatedSuccessfully')),
-          backgroundColor: Colors.green,
-        ),
+      SnackbarUtil.showSuccess(
+        context,
+        AppStrings.tr(context, 'productCreatedSuccessfully'),
       );
 
       Navigator.pop(context, product);
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${AppStrings.tr(context, 'failedToCreateProduct')}: $e',
-          ),
-          backgroundColor: Colors.red,
-        ),
+      SnackbarUtil.showError(
+        context,
+        '${AppStrings.tr(context, 'failedToCreateProduct')}: $e',
       );
     } finally {
       if (mounted) {
@@ -122,127 +119,26 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Image Section
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                  color: AppColors.card,
-                ),
-                child: _selectedImage != null
-                    ? Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(11),
-                            child: Image.file(
-                              _selectedImage!,
-                              height: 250,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: FloatingActionButton(
-                              mini: true,
-                              backgroundColor: Colors.red,
-                              onPressed: _removeImage,
-                              child: const Icon(Icons.close),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 40),
-                          Icon(
-                            Icons.image_outlined,
-                            size: 64,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            AppStrings.tr(context, 'noImageSelected'),
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            onPressed: _pickImage,
-                            icon: const Icon(Icons.add_photo_alternate),
-                            label: Text(
-                              AppStrings.tr(context, 'uploadImage'),
-                            ),
-                          ),
-                          const SizedBox(height: 40),
-                        ],
-                      ),
+              // Image Picker Widget
+              ImagePickerWidget(
+                selectedImage: _selectedImage,
+                onPickImage: _pickImage,
+                onRemoveImage: _removeImage,
               ),
               const SizedBox(height: 24),
 
-              // Change Image Button
-              if (_selectedImage != null)
-                ElevatedButton.icon(
-                  onPressed: _pickImage,
-                  icon: const Icon(Icons.edit),
-                  label: Text(
-                    AppStrings.tr(context, 'selectImageFromGallery'),
-                  ),
-                )
-              else
-                const SizedBox.shrink(),
-
-              if (_selectedImage != null) const SizedBox(height: 16),
-
-              // Product Name
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: AppStrings.tr(context, 'name'),
-                  hintText: AppStrings.tr(context, 'enterProductName'),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  prefixIcon: const Icon(Icons.label_outlined),
-                ),
-                validator: (value) {
+              // Product Form Fields
+              ProductFormFields(
+                nameController: _nameController,
+                descriptionController: _descriptionController,
+                priceController: _priceController,
+                nameValidator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return AppStrings.tr(context, 'productNameRequired');
                   }
                   return null;
                 },
-              ),
-              const SizedBox(height: 16),
-
-              // Product Description
-              TextFormField(
-                controller: _descriptionController,
-                decoration: InputDecoration(
-                  labelText: AppStrings.tr(context, 'description'),
-                  hintText: AppStrings.tr(context, 'enterProductDescription'),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  prefixIcon: const Icon(Icons.description_outlined),
-                ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-
-              // Product Price
-              TextFormField(
-                controller: _priceController,
-                decoration: InputDecoration(
-                  labelText: AppStrings.tr(context, 'price'),
-                  hintText: AppStrings.tr(context, 'enterProductPrice'),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  prefixIcon: const Icon(Icons.attach_money),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
+                priceValidator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return AppStrings.tr(context, 'priceRequired');
                   }

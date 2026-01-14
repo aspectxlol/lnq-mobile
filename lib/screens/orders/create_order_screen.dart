@@ -357,7 +357,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                   TextButton.icon(
                                     onPressed: _showAddCustomItemDialog,
                                     icon: const Icon(Icons.add_circle_outline),
-                                    label: const Text('Add Custom'),
+                                    label: Text(AppStrings.tr(context, 'addCustom')),
                                   ),
                                 ],
                               ),

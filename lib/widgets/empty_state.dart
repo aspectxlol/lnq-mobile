@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../l10n/strings.dart';
 
 class EmptyState extends StatelessWidget {
   final IconData icon;
@@ -84,7 +85,7 @@ class ErrorState extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text(AppStrings.trWatch(context, 'retry')),
               ),
             ],
           ],

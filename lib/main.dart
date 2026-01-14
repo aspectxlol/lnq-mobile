@@ -10,6 +10,7 @@ import 'theme/app_theme.dart';
 import 'screens/products/products_screen.dart';
 import 'screens/orders/orders_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import '../l10n/strings.dart';
 
 void main() {
   runApp(
@@ -131,21 +132,21 @@ class _MainScreenState extends State<MainScreen>
           backgroundColor: AppColors.card,
           indicatorColor: AppColors.primary,
           height: 70,
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.shopping_bag_outlined),
-              selectedIcon: Icon(Icons.shopping_bag),
-              label: 'Products',
+              icon: const Icon(Icons.shopping_bag_outlined),
+              selectedIcon: const Icon(Icons.shopping_bag),
+              label: AppStrings.trWatch(context, 'products'),
             ),
             NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined),
-              selectedIcon: Icon(Icons.receipt_long),
-              label: 'Orders',
+              icon: const Icon(Icons.receipt_long_outlined),
+              selectedIcon: const Icon(Icons.receipt_long),
+              label: AppStrings.trWatch(context, 'orders'),
             ),
             NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings),
-              label: 'Settings',
+              icon: const Icon(Icons.settings_outlined),
+              selectedIcon: const Icon(Icons.settings),
+              label: AppStrings.trWatch(context, 'settings'),
             ),
           ],
         ),

@@ -5,6 +5,9 @@ import '../../models/product.dart';
 import '../../l10n/strings.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/data_loader_extension.dart';
+import '../../components/image_picker_widget.dart';
+import '../../components/product_form_fields.dart';
+import '../../utils/snackbar_util.dart';
 
 class EditProductScreen extends StatefulWidget {
   final Product product;
@@ -70,7 +73,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
   Future<void> _updateProduct() async {
     final name = _nameController.text.trim();
     final description = _descriptionController.text.trim();
-    final priceStr = _priceController.text.trim();
+    final priceStr = _priceController.text.replaceAll(RegExp(r'[^0-9]'), '').trim();
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -114,24 +117,18 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppStrings.tr(context, 'productUpdatedSuccessfully')),
-          backgroundColor: Colors.green,
-        ),
+      SnackbarUtil.showSuccess(
+        context,
+        AppStrings.tr(context, 'productUpdatedSuccessfully'),
       );
 
       Navigator.pop(context, updatedProduct);
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${AppStrings.tr(context, 'failedToUpdateProduct')}: $e',
-          ),
-          backgroundColor: Colors.red,
-        ),
+      SnackbarUtil.showError(
+        context,
+        '${AppStrings.tr(context, 'failedToUpdateProduct')}: $e',
       );
     } finally {
       if (mounted) {
@@ -151,155 +148,39 @@ class _EditProductScreenState extends State<EditProductScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Image Section
-            GestureDetector(
-              onTap: _pickImage,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                  color: AppColors.card,
-                ),
-                child: _selectedImage != null
-                    ? Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(11),
-                            child: Image.file(
-                              _selectedImage!,
-                              height: 250,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: FloatingActionButton(
-                              mini: true,
-                              backgroundColor: Colors.red,
-                              onPressed: _removeImage,
-                              child: const Icon(Icons.close),
-                            ),
-                          ),
-                        ],
-                      )
-                    : widget.product.imageId != null
-                        ? Stack(
-                            children: [
-                              FutureBuilder<String?>(
-                                future: Future.value(
-                                  widget.product.getImageUrl(
-                                    getApiService().baseUrl,
-                                  ),
-                                ),
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasData && snapshot.data != null) {
-                                    return ClipRRect(
-                                      borderRadius: BorderRadius.circular(11),
-                                      child: Image.network(
-                                        snapshot.data!,
-                                        height: 250,
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, trace) {
-                                          return Container(
-                                            height: 250,
-                                            color: Colors.grey[300],
-                                            child: const Icon(Icons.broken_image),
-                                          );
-                                        },
-                                      ),
-                                    );
-                                  }
-                                  return Container(
-                                    height: 250,
-                                    color: Colors.grey[300],
-                                  );
-                                },
-                              ),
-                              Positioned(
-                                top: 8,
-                                right: 8,
-                                child: FloatingActionButton(
-                                  mini: true,
-                                  backgroundColor: Colors.orange,
-                                  onPressed: _pickImage,
-                                  child: const Icon(Icons.edit),
-                                ),
-                              ),
-                            ],
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const SizedBox(height: 40),
-                              Icon(
-                                Icons.image_outlined,
-                                size: 64,
-                                color: Colors.grey[600],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                AppStrings.tr(context, 'noImageSelected'),
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton.icon(
-                                onPressed: _pickImage,
-                                icon: const Icon(Icons.add_photo_alternate),
-                                label: Text(
-                                  AppStrings.tr(context, 'uploadImage'),
-                                ),
-                              ),
-                              const SizedBox(height: 40),
-                            ],
-                          ),
-              ),
+            // Image Picker Widget
+            ImagePickerWidget(
+              selectedImage: _selectedImage,
+              networkImageUrl: widget.product.imageId != null
+                  ? widget.product.getImageUrl(getApiService().baseUrl)
+                  : null,
+              onPickImage: _pickImage,
+              onRemoveImage: _removeImage,
+              showEditButton: widget.product.imageId != null && _selectedImage == null,
             ),
             const SizedBox(height: 24),
 
-            // Product Name
-            TextFormField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: AppStrings.tr(context, 'name'),
-                hintText: AppStrings.tr(context, 'enterProductName'),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                prefixIcon: const Icon(Icons.label_outlined),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Product Description
-            TextFormField(
-              controller: _descriptionController,
-              decoration: InputDecoration(
-                labelText: AppStrings.tr(context, 'description'),
-                hintText: AppStrings.tr(context, 'enterProductDescription'),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                prefixIcon: const Icon(Icons.description_outlined),
-              ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 16),
-
-            // Product Price
-            TextFormField(
-              controller: _priceController,
-              decoration: InputDecoration(
-                labelText: AppStrings.tr(context, 'price'),
-                hintText: AppStrings.tr(context, 'enterProductPrice'),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                prefixIcon: const Icon(Icons.attach_money),
-              ),
-              keyboardType: TextInputType.number,
+            // Product Form Fields
+            ProductFormFields(
+              nameController: _nameController,
+              descriptionController: _descriptionController,
+              priceController: _priceController,
+              nameValidator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return AppStrings.tr(context, 'productNameRequired');
+                }
+                return null;
+              },
+              priceValidator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return AppStrings.tr(context, 'priceRequired');
+                }
+                final unformatted = value.replaceAll(RegExp(r'[^0-9]'), '').trim();
+                if (int.tryParse(unformatted) == null || unformatted == '0') {
+                  return AppStrings.tr(context, 'priceRequired');
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 32),
 

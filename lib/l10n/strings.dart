@@ -117,6 +117,9 @@ class AppStrings {
       'enterProductName': 'Enter product name',
       'enterProductDescription': 'Enter product description',
       'enterProductPrice': 'Enter product price',
+      'searchByCustomerOrOrderId': 'Search by customer or order ID',
+      'searchByName': 'Search by product name',
+      'noDescription': 'No description available',
 
       // Order Details
       'orderDetails': 'Order Details',
@@ -163,6 +166,11 @@ class AppStrings {
       'error': 'Error',
       'success': 'Success',
       'retry': 'Retry',
+      'addCustom': 'Add Custom',
+      'addCustomItem': 'Add Custom Item',
+      'customItemName': 'Custom Item Name',
+      'createdDate': 'Created Date',
+      'pickupDateLabel': 'Pickup Date',
 
       // Messages
       'connectionSuccessful': 'Connection successful!',
@@ -299,6 +307,9 @@ class AppStrings {
       'enterProductName': 'Masukkan nama produk',
       'enterProductDescription': 'Masukkan deskripsi produk',
       'enterProductPrice': 'Masukkan harga produk',
+      'searchByCustomerOrOrderId': 'Cari berdasarkan pelanggan atau ID pesanan',
+      'searchByName': 'Cari berdasarkan nama produk',
+      'noDescription': 'Tidak ada deskripsi tersedia',
 
       // Order Details
       'orderDetails': 'Detail Pesanan',
@@ -344,6 +355,11 @@ class AppStrings {
       'error': 'Kesalahan',
       'success': 'Berhasil',
       'retry': 'Coba Lagi',
+      'addCustom': 'Tambah Kustom',
+      'addCustomItem': 'Tambah Item Kustom',
+      'customItemName': 'Nama Item Kustom',
+      'createdDate': 'Tanggal Dibuat',
+      'pickupDateLabel': 'Tanggal Pengambilan',
 
       // Messages
       'connectionSuccessful': 'Koneksi berhasil!',

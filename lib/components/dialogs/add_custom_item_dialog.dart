@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/order_item_data.dart';
 import '../price_input.dart';
+import '../../l10n/strings.dart';
 
 class AddCustomItemDialog extends StatefulWidget {
   final void Function(OrderItemData) onAddItem;
@@ -30,7 +31,7 @@ class _AddCustomItemDialogState extends State<AddCustomItemDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Custom Item'),
+      title: Text(AppStrings.trWatch(context, 'addCustomItem')),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -38,9 +39,9 @@ class _AddCustomItemDialogState extends State<AddCustomItemDialog> {
           children: [
             TextFormField(
               controller: customNameController,
-              decoration: const InputDecoration(
-                labelText: 'Custom Item Name',
-                prefixIcon: Icon(Icons.edit),
+              decoration: InputDecoration(
+                labelText: AppStrings.trWatch(context, 'customItemName'),
+                prefixIcon: const Icon(Icons.edit),
               ),
             ),
             const SizedBox(height: 16),
@@ -64,7 +65,7 @@ class _AddCustomItemDialogState extends State<AddCustomItemDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppStrings.tr(context, 'cancel')),
         ),
         ElevatedButton(
           onPressed: () {
@@ -84,7 +85,7 @@ class _AddCustomItemDialogState extends State<AddCustomItemDialog> {
 
             Navigator.pop(context);
           },
-          child: const Text('Add Item'),
+          child: Text(AppStrings.tr(context, 'addItem')),
         ),
       ],
     );

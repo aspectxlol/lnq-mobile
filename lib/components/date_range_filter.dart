@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../l10n/strings.dart';
 
 class DateRangeFilter extends StatelessWidget {
   final String activeFilter;
@@ -32,14 +33,14 @@ class DateRangeFilter extends StatelessWidget {
           onPressed: (index) {
             onFilterChanged(index == 0 ? 'createdDate' : 'pickupDate');
           },
-          children: const [
+          children: [
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Text('Created Date'),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(AppStrings.trWatch(context, 'createdDate')),
             ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Text('Pickup Date'),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(AppStrings.trWatch(context, 'pickupDateLabel')),
             ),
           ],
         ),

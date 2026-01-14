@@ -8,6 +8,7 @@ import '../../utils/currency_utils.dart';
 import '../../theme/app_theme.dart';
 import '../../l10n/strings.dart';
 import '../../utils/data_loader_extension.dart';
+import '../../components/dialogs/sort_filter_dialog.dart';
 import 'create_product_screen.dart';
 
 enum ProductView { cards, list }
@@ -70,78 +71,23 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   void _openSortFilterDialog() async {
-    String tempSortBy = _sortBy;
-    bool tempSortAsc = _sortAsc;
-    String? tempFilterCategory = _filterCategory;
     await showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(AppStrings.tr(context, 'sortAndFilter')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Text(AppStrings.tr(context, 'sortBy')),
-                  const SizedBox(width: 16),
-                  DropdownButton<String>(
-                    value: tempSortBy,
-                    items: [
-                      DropdownMenuItem(value: 'name', child: Text(AppStrings.tr(context, 'name'))),
-                      DropdownMenuItem(value: 'price', child: Text(AppStrings.tr(context, 'price'))),
-                    ],
-                    onChanged: (v) {
-                      if (v != null) tempSortBy = v;
-                      setState(() {});
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(tempSortAsc ? Icons.arrow_upward : Icons.arrow_downward),
-                    onPressed: () {
-                      tempSortAsc = !tempSortAsc;
-                      setState(() {});
-                    },
-                  ),
-                ],
-              ),
-              // Example filter UI (uncomment and adjust if you have categories)
-              // Row(
-              //   children: [
-              //     Text(AppStrings.tr(context, 'category')),
-              //     const SizedBox(width: 16),
-              //     DropdownButton<String>(
-              //       value: tempFilterCategory,
-              //       items: [DropdownMenuItem(value: null, child: Text('All'))],
-              //       onChanged: (v) {
-              //         tempFilterCategory = v;
-              //         setState(() {});
-              //       },
-              //     ),
-              //   ],
-              // ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(AppStrings.tr(context, 'cancel')),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _sortBy = tempSortBy;
-                  _sortAsc = tempSortAsc;
-                  _filterCategory = tempFilterCategory;
-                });
-                _applyFilters();
-                Navigator.pop(context);
-              },
-              child: Text(AppStrings.tr(context, 'apply')),
-            ),
-          ],
-        );
-      },
+      builder: (context) => SortFilterDialog(
+        initialSortField: _sortBy,
+        initialSortAscending: _sortAsc,
+        sortOptions: [
+          {'value': 'name', 'label': 'name'},
+          {'value': 'price', 'label': 'price'},
+        ],
+        onApply: (sortField, sortAscending) {
+          setState(() {
+            _sortBy = sortField;
+            _sortAsc = sortAscending;
+          });
+          _applyFilters();
+        },
+      ),
     );
   }
 
@@ -315,6 +261,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
                             child: Image.network(
                               product.getImageUrl(getApiService().baseUrl)!,
                               fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
                               errorBuilder: (context, error, trace) {
                                 return Center(
                                   child: Icon(
