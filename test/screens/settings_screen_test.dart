@@ -82,7 +82,7 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 500));
 
-      final radioButtons = find.byType(RadioListTile<String>);
+      final radioButtons = find.byType(Radio<String>);
       expect(radioButtons, findsWidgets);
       expect(radioButtons.evaluate().length, greaterThanOrEqualTo(2));
     });
@@ -429,7 +429,7 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 500));
 
-      final radioButtons = find.byType(RadioListTile<String>);
+      final radioButtons = find.byType(Radio<String>);
       expect(radioButtons, findsWidgets);
     });
   });
@@ -704,7 +704,7 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 500));
 
-      final radioButtons = find.byType(RadioListTile<String>);
+      final radioButtons = find.byType(Radio<String>);
       expect(radioButtons, findsWidgets);
     });
 
@@ -721,7 +721,7 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 500));
 
-      final radioButtons = find.byType(RadioListTile<String>);
+      final radioButtons = find.byType(Radio<String>);
       expect(radioButtons, findsWidgets);
     });
 
@@ -738,7 +738,7 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 500));
 
-      final radioButtons = find.byType(RadioListTile<String>);
+      final radioButtons = find.byType(Radio<String>);
       expect(radioButtons, findsWidgets);
     });
 

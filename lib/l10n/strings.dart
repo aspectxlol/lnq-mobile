@@ -117,7 +117,6 @@ class AppStrings {
       'enterProductName': 'Enter product name',
       'enterProductDescription': 'Enter product description',
       'enterProductPrice': 'Enter product price',
-      'searchByCustomerOrOrderId': 'Search by customer or order ID',
       'searchByName': 'Search by product name',
       'noDescription': 'No description available',
 
@@ -307,7 +306,6 @@ class AppStrings {
       'enterProductName': 'Masukkan nama produk',
       'enterProductDescription': 'Masukkan deskripsi produk',
       'enterProductPrice': 'Masukkan harga produk',
-      'searchByCustomerOrOrderId': 'Cari berdasarkan pelanggan atau ID pesanan',
       'searchByName': 'Cari berdasarkan nama produk',
       'noDescription': 'Tidak ada deskripsi tersedia',
 
