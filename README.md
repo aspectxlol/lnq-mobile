@@ -128,7 +128,7 @@ swagger.json                     # API specification
 - **Animations**: Smooth transitions and visual feedback
 
 ### Localization
-- **Flutter Localization**: ARB-based internationalization
+- **Custom Localization**: Centralized strings.dart file with AppStrings class
 - **Supported Languages**: English, Indonesian (easily extensible)
 
 ### API Integration
@@ -192,12 +192,7 @@ Follow these steps to set up the development environment:
    flutter pub get
    ```
 
-4. **Generate localization code** (if needed):
-   ```sh
-   flutter gen-l10n
-   ```
-
-5. **Run the application**:
+4. **Run the application**:
 
    **On Android device/emulator**:
    ```sh
@@ -758,7 +753,7 @@ http.Client()... // Consider using dio package for better debugging
 - **lib/models/**: Data models and API response structures
 - **lib/screens/**: Full-page UI components
 - **lib/components/**: Reusable UI widgets
-- **lib/l10n/**: Localization strings (ARB files)
+- **lib/l10n/strings.dart**: Centralized localization strings with AppStrings class
 
 ### Modifying Dependencies
 
