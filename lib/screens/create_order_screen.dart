@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/product.dart';
 import '../models/create_order_request.dart';
 import '../models/order_item_data.dart';
-import '../providers/settings_provider.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/animated_widgets.dart';
 import '../theme/app_theme.dart';
-import '../components/product_dropdown_item.dart';
+import '../theme/app_animations.dart';
+import '../components/dialogs/add_product_dialog.dart';
+import '../components/dialogs/add_custom_item_dialog.dart';
 import '../components/quantity_selector.dart';
-import '../components/price_input.dart';
 import '../widgets/labeled_value_row.dart';
 import '../widgets/note_container.dart';
 import '../l10n/strings.dart';
@@ -188,242 +187,42 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     return total;
   }
   void _showAddCustomItemDialog() {
-    final customNameController = TextEditingController();
-    final customPriceController = TextEditingController();
-    final customNotesController = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Add Custom Item'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextFormField(
-                  controller: customNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Custom Item Name',
-                    prefixIcon: Icon(Icons.edit),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                PriceInput(
-                  controller: customPriceController,
-                  labelText: 'Custom Price',
-                  prefixText: 'Rp ',
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: customNotesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes (optional)',
-                    prefixIcon: Icon(Icons.note_alt_outlined),
-                  ),
-                  maxLines: 2,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final name = customNameController.text.trim();
-                final price = int.tryParse(customPriceController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-                final notes = customNotesController.text.trim();
-                if (name.isEmpty || price < 0) return;
-                setState(() {
-                  _orderItems.add(OrderItemData.custom(
-                    customName: name,
-                    customPrice: price,
-                    notes: notes.isNotEmpty ? notes : null,
-                  ));
-                });
-                Navigator.pop(context);
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        ),
+      builder: (context) => AddCustomItemDialog(
+        onAddItem: (item) {
+          setState(() {
+            _orderItems.add(item);
+          });
+        },
       ),
     );
   }
 
   void _showAddProductDialog(List<Product> products) {
-    final locale = Provider.of<SettingsProvider>(context, listen: false).locale;
-    Product? selectedProduct;
-    int quantity = 1;
+    final selectedProductIds = _orderItems
+        .where((item) => item.productId != null)
+        .map((item) => item.productId!)
+        .toList();
 
-    int? customPrice;
-    final customPriceController = TextEditingController();
-    final itemNotesController = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(AppStrings.getString(locale, 'addProduct')),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DropdownButtonFormField<Product>(
-                  value: selectedProduct,
-                  decoration: InputDecoration(
-                    labelText: AppStrings.getString(locale, 'selectProduct'),
-                    prefixIcon: const Icon(Icons.shopping_bag),
-                  ),
-                  isExpanded: true,
-                  items: products
-                      .where((p) => !_orderItems.any((item) => item.productId == p.id))
-                      .map(
-                        (product) => DropdownMenuItem(
-                          value: product,
-                          child: ProductDropdownItem(
-                            name: product.name,
-                            price: _formatIdr(product.price),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (product) {
-                    setDialogState(() {
-                      selectedProduct = product;
-                      customPrice = product?.price;
-                      customPriceController.text =
-                          product != null && product.price > 0
-                          ? _formatIdr(product.price)
-                          : '';
-                    });
-                  },
-                ),
-                const SizedBox(height: 24),
-                if (selectedProduct != null) ...[
-                  Text(
-                    AppStrings.getString(locale, 'quantity'),
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  QuantitySelector(
-                    quantity: quantity,
-                    onDecrement: quantity > 1
-                        ? () {
-                            setDialogState(() {
-                              quantity--;
-                            });
-                          }
-                        : null,
-                    onIncrement: () {
-                      setDialogState(() {
-                        quantity++;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Price at sale (optional):',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  PriceInput(
-                    controller: customPriceController,
-                    labelText: 'Price at sale (optional):',
-                    prefixText: 'Rp ',
-                    onChanged: (value) {
-                      setDialogState(() {
-                        customPrice = int.tryParse(value);
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Item Notes (optional):',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: itemNotesController,
-                    decoration: InputDecoration(
-                      hintText: 'Enter notes for this item',
-                      prefixIcon: const Icon(Icons.note_alt_outlined),
-                    ),
-                    maxLines: 2,
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${AppStrings.getString(locale, 'subtotal')}:',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        Text(
-                          _formatIdr(
-                            (customPrice != null
-                                    ? customPrice!
-                                    : selectedProduct!.price) *
-                                quantity,
-                            allowZero: true,
-                          ),
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(AppStrings.getString(locale, 'cancel')),
-            ),
-            ElevatedButton(
-              onPressed: selectedProduct != null
-                  ? () {
-                      setState(() {
-                        _orderItems.add(OrderItemData.product(
-                          productId: selectedProduct!.id,
-                          amount: quantity,
-                          priceAtSale: customPrice,
-                          notes: itemNotesController.text.trim().isNotEmpty
-                              ? itemNotesController.text.trim()
-                              : null,
-                        ));
-                      });
-                      Navigator.pop(context);
-                    }
-                  : null,
-              child: Text(AppStrings.getString(locale, 'add')),
-            ),
-          ],
-        ),
+      builder: (context) => AddProductDialog(
+        availableProducts: products,
+        selectedProductIds: selectedProductIds,
+        onAddItem: (item) {
+          setState(() {
+            _orderItems.add(item);
+          });
+        },
       ),
     );
   }
 
   String _formatIdr(int value, {bool raw = false, bool allowZero = false}) {
     if (raw) {
-      // Format as plain number for input
       return value.toString();
     }
-    // If allowZero is true, show 'Rp 0' for zero value
     if (value == 0 && !allowZero) return '';
     final str = value.toString();
     final buffer = StringBuffer();
@@ -508,7 +307,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         ),
                         const SizedBox(height: 16),
                         FadeInSlide(
-                          delay: const Duration(milliseconds: 50),
+                          delay: AppAnimations.fadeInMedium,
                           child: TextFormField(
                             controller: _orderNotesController,
                             decoration: InputDecoration(
@@ -521,7 +320,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         ),
                         const SizedBox(height: 24),
                         FadeInSlide(
-                          delay: const Duration(milliseconds: 100),
+                          delay: AppAnimations.fadeInLong,
                           child: InkWell(
                             onTap: _selectPickupDate,
                             borderRadius: BorderRadius.circular(8),

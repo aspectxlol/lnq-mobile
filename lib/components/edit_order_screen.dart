@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'dart:ui';
 import '../models/order.dart';
 import '../models/product.dart';
 import '../models/order_item_data.dart';
-import '../services/api_service.dart';
-import '../providers/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/currency_utils.dart';
+import '../utils/data_loader_extension.dart';
 import '../l10n/strings.dart';
 import 'price_input.dart';
 
@@ -227,10 +225,8 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
   }
 
   void _loadProducts() {
-    final baseUrl = context.read<SettingsProvider>().baseUrl;
-    final apiService = ApiService(baseUrl);
     setState(() {
-      _productsFuture = apiService.getProducts();
+      _productsFuture = getApiService().getProducts();
     });
   }
 
