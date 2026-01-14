@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_theme.dart';
-import '../screens/product_detail_screen.dart';
+import '../screens/product_details_screen.dart';
 import 'package:provider/provider.dart';
 import '../widgets/animated_widgets.dart';
 import '../widgets/product_widgets.dart';
@@ -22,7 +22,7 @@ class ProductListItem extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ProductDetailScreen(productId: product.id),
+            builder: (context) => ProductDetailsScreen(product: product),
           ),
         );
       },

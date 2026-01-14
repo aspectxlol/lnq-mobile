@@ -26,22 +26,32 @@ class PriceInput extends StatefulWidget {
 }
 
 class _PriceInputState extends State<PriceInput> {
-  final _formatter = NumberFormat('#,##0.00', 'id_ID');
+  final _formatter = NumberFormat('#,##0', 'id_ID'); // No decimals
 
-  void _formatInput(String value) {
-    // Remove all non-digit characters except decimal point
-    final digitsOnly = value.replaceAll(RegExp(r'[^\d]'), '');
+  @override
+  void initState() {
+    super.initState();
+    // Format initial value if present
+    if (widget.controller.text.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _formatInput(widget.controller.text, callOnChanged: false);
+      });
+    }
+  }
+
+  void _formatInput(String value, {bool callOnChanged = true}) {
+    // Remove all non-digit characters
+    final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
 
     if (digitsOnly.isEmpty) {
       widget.controller.clear();
-      widget.onChanged?.call('');
+      if (callOnChanged) widget.onChanged?.call('');
       return;
     }
 
-    // Convert to number
-    final number = int.parse(digitsOnly);
-
-    // Format with thousand separator and 2 decimal places
+    // Prevent leading zeros
+    final normalized = digitsOnly.replaceFirst(RegExp(r'^0+'), '');
+    final number = int.tryParse(normalized.isEmpty ? '0' : normalized) ?? 0;
     final formatted = _formatter.format(number);
 
     // Update controller without triggering onChanged during formatting
@@ -51,7 +61,7 @@ class _PriceInputState extends State<PriceInput> {
     );
 
     // Notify parent with unformatted number
-    widget.onChanged?.call(digitsOnly);
+    if (callOnChanged) widget.onChanged?.call(number.toString());
   }
 
   @override
@@ -64,7 +74,7 @@ class _PriceInputState extends State<PriceInput> {
         prefixText: widget.prefixText,
         helperText: widget.helperText,
       ),
-      onChanged: _formatInput,
+      onChanged: (val) => _formatInput(val),
       validator: widget.validator,
       enabled: widget.enabled,
     );

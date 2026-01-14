@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:lnq/models/product.dart';
+import 'package:lnq/screens/product_details_screen.dart';
 import 'package:provider/provider.dart';
 import 'constants/app_constants.dart';
 import 'providers/settings_provider.dart';
 import 'theme/app_theme.dart';
-import 'screens/product_management_screen.dart';
+import 'screens/products_screen.dart';
 import 'screens/orders_screen.dart';
 import 'screens/settings_screen.dart';
 
@@ -29,6 +31,16 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.darkTheme,
       locale: locale,
       home: const MainScreen(),
+      onGenerateRoute: (settings) {
+        if (settings.name == '/product_details') {
+          final product = settings.arguments as Product;
+          return MaterialPageRoute(
+            builder: (context) => ProductDetailsScreen(product: product),
+          );
+        }
+        // Add other dynamic routes here if needed
+        return null;
+      },
     );
   }
 }
@@ -46,7 +58,7 @@ class _MainScreenState extends State<MainScreen>
   late AnimationController _fabAnimationController;
 
   static const List<Widget> _screens = [
-    ProductManagementScreen(),
+    ProductsScreen(),
     OrdersScreen(),
     SettingsScreen(),
   ];
@@ -104,7 +116,7 @@ class _MainScreenState extends State<MainScreen>
           selectedIndex: _currentIndex,
           onDestinationSelected: _onTabTapped,
           backgroundColor: AppColors.card,
-          indicatorColor: AppColors.primary.withValues(alpha: 0.2),
+          indicatorColor: AppColors.primary,
           height: 70,
           destinations: const [
             NavigationDestination(
