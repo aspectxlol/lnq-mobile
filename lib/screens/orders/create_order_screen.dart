@@ -283,179 +283,36 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
                   child: Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        FadeInSlide(
-                          child: TextFormField(
-                            controller: _customerNameController,
-                            decoration: InputDecoration(
-                              labelText: AppStrings.trWatch(context, 'customerName'),
-                              hintText: AppStrings.trWatch(context, 'enterCustomerName'),
-                              prefixIcon: const Icon(Icons.person_outline),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return AppStrings.trWatch(context, 'pleaseEnterCustomerName');
-                              }
-                              return null;
-                            },
+                        // Order Info Card
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                          child: FadeInSlide(
+                            child: _buildOrderInfoCard(context),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        FadeInSlide(
-                          delay: AppAnimations.fadeInMedium,
-                          child: TextFormField(
-                            controller: _orderNotesController,
-                            decoration: InputDecoration(
-                              labelText: 'Order Notes (optional)',
-                              hintText: 'Enter any notes for this order',
-                              prefixIcon: const Icon(Icons.note_alt_outlined),
-                            ),
-                            maxLines: 2,
+                        // Order Items Section
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                          child: FadeInSlide(
+                            delay: AppAnimations.fadeInMedium,
+                            child: _buildOrderItemsHeader(context, products),
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        FadeInSlide(
-                          delay: AppAnimations.fadeInLong,
-                          child: InkWell(
-                            onTap: _selectPickupDate,
-                            borderRadius: BorderRadius.circular(8),
-                            child: InputDecorator(
-                              decoration: InputDecoration(
-                                labelText: AppStrings.trWatch(context, 'pickupDateOptional'),
-                                prefixIcon: const Icon(Icons.calendar_today),
-                                suffixIcon: const Icon(Icons.arrow_forward_ios, size: 16),
-                              ),
-                              child: Text(
-                                _pickupDate != null
-                                    ? DateFormat('MMM dd, yyyy').format(_pickupDate!)
-                                    : AppStrings.trWatch(context, 'noPickupDateSet'),
-                                style: TextStyle(
-                                  color: _pickupDate != null
-                                      ? AppColors.foreground
-                                      : AppColors.mutedForeground,
-                                ),
-                              ),
-                            ),
-                          ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                          child: _buildOrderItemsList(context, products),
                         ),
-                        const SizedBox(height: 32),
-                        FadeInSlide(
-                          delay: const Duration(milliseconds: 200),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                AppStrings.trWatch(context, 'orderItems'),
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              Row(
-                                children: [
-                                  TextButton.icon(
-                                    onPressed: () => _showAddProductDialog(products),
-                                    icon: const Icon(Icons.add),
-                                    label: Text(AppStrings.trWatch(context, 'addItem')),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  TextButton.icon(
-                                    onPressed: _showAddCustomItemDialog,
-                                    icon: const Icon(Icons.add_circle_outline),
-                                    label: Text(AppStrings.tr(context, 'addCustom')),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        if (_orderItems.isEmpty)
-                          FadeInSlide(
-                            delay: const Duration(milliseconds: 300),
-                            child: Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(32),
-                                child: Center(
-                                  child: Column(
-                                    children: [
-                                      Icon(Icons.shopping_cart_outlined, size: 48, color: AppColors.mutedForeground),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        AppStrings.trWatch(context, 'noItemsAdded'),
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.mutedForeground),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        AppStrings.trWatch(context, 'tapAddItem'),
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.mutedForeground),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                        else ...[
-                          ..._orderItems.map((item) {
-                            return FadeInSlide(
-                              delay: const Duration(milliseconds: 300),
-                              child: Card(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            width: 60,
-                                            height: 60,
-                                            decoration: BoxDecoration(
-                                              color: AppColors.accent,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: const Icon(Icons.shopping_bag, color: AppColors.mutedForeground),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(item.customName ?? '', style: Theme.of(context).textTheme.titleMedium),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  'Rp ${item.customPrice.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')} × ${item.amount}',
-                                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          QuantitySelector(
-                                            quantity: item.amount,
-                                            onIncrement: () => _incrementProduct(item.productId!),
-                                            onDecrement: () => _decrementProduct(item.productId!),
-                                          ),
-                                        ],
-                                      ),
-                                      if (item.notes != null && item.notes!.isNotEmpty) ...[
-                                        const SizedBox(height: 12),
-                                        NoteContainer(note: item.notes!),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }),
-                        ],
                       ],
                     ),
                   ),
                 ),
               ),
+              // Sticky Summary Footer
               if (_orderItems.isNotEmpty)
                 Container(
                   decoration: const BoxDecoration(
@@ -474,22 +331,25 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                           valueStyle: Theme.of(context).textTheme.displaySmall?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: _isCreating ? null : () => _createOrder(),
-                          icon: _isCreating
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.primaryForeground,
-                                  ),
-                                )
-                              : const Icon(Icons.check),
-                          label: Text(
-                            _isCreating
-                                ? AppStrings.trWatch(context, 'creating')
-                                : AppStrings.trWatch(context, 'createOrder'),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _isCreating ? null : () => _createOrder(),
+                            icon: _isCreating
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primaryForeground,
+                                    ),
+                                  )
+                                : const Icon(Icons.check),
+                            label: Text(
+                              _isCreating
+                                  ? AppStrings.trWatch(context, 'creating')
+                                  : AppStrings.trWatch(context, 'createOrder'),
+                            ),
                           ),
                         ),
                       ],
@@ -502,73 +362,270 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       ),
     );
   }
-}
 
-class ProductOrderItemCard extends StatelessWidget {
-  final Product product;
-  final int quantity;
-  final int price;
-  final String? notes;
-  final VoidCallback onIncrement;
-  final VoidCallback onDecrement;
-
-  const ProductOrderItemCard({
-    super.key,
-    required this.product,
-    required this.quantity,
-    required this.price,
-    this.notes,
-    required this.onIncrement,
-    required this.onDecrement,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildOrderInfoCard(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: AppColors.accent,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.shopping_bag, color: AppColors.mutedForeground),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(product.name, style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Rp ${price.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')} × $quantity',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ),
-                QuantitySelector(
-                  quantity: quantity,
-                  onIncrement: onIncrement,
-                  onDecrement: onDecrement,
-                ),
-              ],
+            // Customer Name Field
+            TextFormField(
+              controller: _customerNameController,
+              decoration: InputDecoration(
+                labelText: AppStrings.trWatch(context, 'customerName'),
+                hintText: AppStrings.trWatch(context, 'enterCustomerName'),
+                prefixIcon: const Icon(Icons.person_outline),
+                isDense: true,
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return AppStrings.trWatch(context, 'pleaseEnterCustomerName');
+                }
+                return null;
+              },
             ),
-            if (notes != null && notes!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              NoteContainer(note: notes!),
-            ],
+            const SizedBox(height: 20),
+            // Pickup Date Field
+            InkWell(
+              onTap: _selectPickupDate,
+              borderRadius: BorderRadius.circular(8),
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: AppStrings.trWatch(context, 'pickupDateOptional'),
+                  prefixIcon: const Icon(Icons.calendar_today),
+                  suffixIcon: const Icon(Icons.arrow_forward_ios, size: 16),
+                  isDense: true,
+                ),
+                child: Text(
+                  _pickupDate != null
+                      ? DateFormat('MMM dd, yyyy').format(_pickupDate!)
+                      : AppStrings.trWatch(context, 'noPickupDateSet'),
+                  style: TextStyle(
+                    color: _pickupDate != null
+                        ? AppColors.foreground
+                        : AppColors.mutedForeground,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Order Notes Field
+            TextFormField(
+              controller: _orderNotesController,
+              decoration: InputDecoration(
+                labelText: 'Order Notes (optional)',
+                hintText: 'Enter any notes for this order',
+                prefixIcon: const Icon(Icons.note_alt_outlined),
+                isDense: true,
+              ),
+              maxLines: 2,
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildOrderItemsHeader(BuildContext context, List<Product> products) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          AppStrings.trWatch(context, 'orderItems'),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.add),
+          onSelected: (String value) {
+            // Defer dialog showing to avoid provider context issues
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (value == 'product') {
+                _showAddProductDialog(products);
+              } else if (value == 'custom') {
+                _showAddCustomItemDialog();
+              }
+            });
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            PopupMenuItem<String>(
+              value: 'product',
+              child: Row(
+                children: [
+                  const Icon(Icons.shopping_bag, size: 20),
+                  const SizedBox(width: 12),
+                  Text(AppStrings.tr(context, 'addItem')),
+                ],
+              ),
+            ),
+            PopupMenuItem<String>(
+              value: 'custom',
+              child: Row(
+                children: [
+                  const Icon(Icons.add_circle_outline, size: 20),
+                  const SizedBox(width: 12),
+                  Text(AppStrings.tr(context, 'addCustom')),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrderItemsList(BuildContext context, List<Product> products) {
+    if (_orderItems.isEmpty) {
+      return FadeInSlide(
+        delay: const Duration(milliseconds: 300),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(48),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 56,
+                    color: AppColors.mutedForeground,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    AppStrings.trWatch(context, 'noItemsAdded'),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.mutedForeground,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    AppStrings.trWatch(context, 'tapAddItem'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.mutedForeground,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        ..._orderItems.map((item) {
+          final String itemName = item.isCustom 
+              ? item.customName ?? ''
+              : item.product?.name ?? 'Product #${item.productId}';
+          final int itemPrice = item.isCustom
+              ? item.customPrice ?? 0
+              : item.priceAtSale ?? item.product?.price ?? 0;
+          
+          return FadeInSlide(
+            delay: const Duration(milliseconds: 300),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: AppColors.accent,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.shopping_bag,
+                              color: AppColors.mutedForeground,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  itemName,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Rp ${itemPrice.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')} × ${item.amount}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 32,
+                                height: 32,
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  icon: const Icon(Icons.remove_circle_outline, size: 20),
+                                  color: AppColors.destructive,
+                                  onPressed: () => _decrementProduct(item.productId ?? item.hashCode),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${item.amount}',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 32,
+                                height: 32,
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  icon: const Icon(Icons.add_circle_outline, size: 20),
+                                  color: AppColors.primary,
+                                  onPressed: () => _incrementProduct(item.productId ?? item.hashCode),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      if (item.notes != null && item.notes!.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        NoteContainer(note: item.notes!),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            )
+          );
+        }).toList(),
+      ],
     );
   }
 }

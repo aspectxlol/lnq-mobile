@@ -27,10 +27,12 @@ class _AddProductDialogState extends State<AddProductDialog> {
   int quantity = 1;
   int? customPrice;
   final customPriceController = TextEditingController();
+  final notesController = TextEditingController();
 
   @override
   void dispose() {
     customPriceController.dispose();
+    notesController.dispose();
     super.dispose();
   }
 
@@ -114,6 +116,16 @@ class _AddProductDialogState extends State<AddProductDialog> {
                   });
                 },
               ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: notesController,
+                decoration: InputDecoration(
+                  labelText: AppStrings.getString(locale, 'itemNotesOptional'),
+                  hintText: AppStrings.getString(locale, 'itemNotesHint'),
+                  prefixIcon: const Icon(Icons.note_alt_outlined),
+                ),
+                maxLines: 2,
+              ),
             ],
           ],
         ),
@@ -134,6 +146,9 @@ class _AddProductDialogState extends State<AddProductDialog> {
                         product: selectedProduct!,
                         amount: quantity,
                         priceAtSale: customPrice,
+                        notes: notesController.text.trim().isEmpty 
+                            ? null 
+                            : notesController.text.trim(),
                       ),
                     );
                     Navigator.pop(context);

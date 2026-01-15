@@ -121,7 +121,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ],
       ),
       body: FutureBuilder<Order>(
-        future: _orderFuture,
+        future: _orderFuture, 
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
