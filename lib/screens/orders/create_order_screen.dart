@@ -624,7 +624,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               ),
             )
           );
-        }).toList(),
+        }),
       ],
     );
   }

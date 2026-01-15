@@ -152,6 +152,9 @@ class AppStrings {
       'urlMustStartWithHttp': 'URL must start with http:// or https://',
       'testConnection': 'Test Connection',
       'testing': 'Testing...',
+      'discoveringBackend': 'Discovering Backend...',
+      'backendDiscovered': 'Backend discovered and connected',
+      'backendDiscoveryFailed': 'Could not discover backend on local network',
 
       // Common
       'save': 'Save',
@@ -340,6 +343,9 @@ class AppStrings {
       'urlMustStartWithHttp': 'URL harus dimulai dengan http:// atau https://',
       'testConnection': 'Tes Koneksi',
       'testing': 'Menguji...',
+      'discoveringBackend': 'Menemukan Backend...',
+      'backendDiscovered': 'Backend ditemukan dan terhubung',
+      'backendDiscoveryFailed': 'Tidak dapat menemukan backend di jaringan lokal',
 
       // Common
       'save': 'Simpan',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_constants.dart';
+import '../services/backend_discovery_service.dart';
 
 class SettingsProvider with ChangeNotifier {
   String _baseUrl = AppConstants.defaultBaseUrl;
@@ -8,9 +9,11 @@ class SettingsProvider with ChangeNotifier {
     AppConstants.defaultLocale,
     AppConstants.defaultLocaleCountry,
   );
+  bool _isDiscoveringBackend = false;
 
   String get baseUrl => _baseUrl;
   Locale get locale => _locale;
+  bool get isDiscoveringBackend => _isDiscoveringBackend;
 
   SettingsProvider() {
     _loadSettings();
@@ -34,6 +37,40 @@ class SettingsProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Failed to load settings: $e');
+    }
+  }
+
+  /// Attempt to discover and connect to a backend server
+  /// First tries to verify the current backend URL
+  /// If that fails, scans the local network for a working backend
+  Future<bool> attemptBackendDiscovery() async {
+    try {
+      _isDiscoveringBackend = true;
+      notifyListeners();
+
+      // First, try to verify the current backend
+      if (await BackendDiscoveryService.verifyBackend(_baseUrl)) {
+        debugPrint('Current backend at $_baseUrl is still accessible');
+        return true;
+      }
+
+      // If current backend is not accessible, discover a new one
+      debugPrint('Current backend at $_baseUrl not accessible, discovering...');
+      final discoveredUrl = await BackendDiscoveryService.discoverBackend();
+
+      if (discoveredUrl != null && discoveredUrl != _baseUrl) {
+        debugPrint('Discovered backend at $discoveredUrl');
+        await setBaseUrl(discoveredUrl);
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('Backend discovery failed: $e');
+      return false;
+    } finally {
+      _isDiscoveringBackend = false;
+      notifyListeners();
     }
   }
 

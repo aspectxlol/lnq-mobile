@@ -21,8 +21,27 @@ void main() {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Attempt backend discovery on app startup
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _discoverBackend();
+    });
+  }
+
+  Future<void> _discoverBackend() async {
+    final settings = context.read<SettingsProvider>();
+    await settings.attemptBackendDiscovery();
+  }
 
   @override
   Widget build(BuildContext context) {
