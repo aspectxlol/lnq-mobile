@@ -509,6 +509,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                                   const SizedBox(height: 12),
                                   Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                                 ],
+                                const SizedBox(height: 96),
                               ],
                             ),
                           ),

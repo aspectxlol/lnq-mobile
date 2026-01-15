@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants/app_constants.dart';
-import 'api_service.dart';
 
 /// Service for discovering and connecting to local backend servers
 class BackendDiscoveryService {

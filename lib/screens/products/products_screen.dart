@@ -35,17 +35,34 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProducts();
+    // Initialize with a pending future that will be resolved when settings are loaded
+    _productsFuture = _initializeAndLoadProducts();
+  }
+
+  Future<List<Product>> _initializeAndLoadProducts() async {
+    final settings = context.read<SettingsProvider>();
+    // Wait for settings to be initialized before loading products
+    await settings.ensureInitialized();
+    return _loadProductsData();
+  }
+
+  Future<List<Product>> _loadProductsData() async {
+    final products = await getApiService().getProducts();
+    if (mounted) {
+      setState(() {
+        _allProducts = products;
+        _applyFilters();
+      });
+    }
+    return products;
   }
 
   void _loadProducts() {
-    setState(() {
-      _productsFuture = getApiService().getProducts().then((products) {
-        _allProducts = products;
-        _applyFilters();
-        return products;
+    if (mounted) {
+      setState(() {
+        _productsFuture = _loadProductsData();
       });
-    });
+    }
   }
 
   void _applyFilters() {

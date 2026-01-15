@@ -10,10 +10,12 @@ class SettingsProvider with ChangeNotifier {
     AppConstants.defaultLocaleCountry,
   );
   bool _isDiscoveringBackend = false;
+  bool _isInitialized = false;
 
   String get baseUrl => _baseUrl;
   Locale get locale => _locale;
   bool get isDiscoveringBackend => _isDiscoveringBackend;
+  bool get isInitialized => _isInitialized;
 
   SettingsProvider() {
     _loadSettings();
@@ -34,9 +36,25 @@ class SettingsProvider with ChangeNotifier {
             : AppConstants.englishLocaleCountry,
       );
 
+      _isInitialized = true;
       notifyListeners();
     } catch (e) {
       debugPrint('Failed to load settings: $e');
+      _isInitialized = true;
+      notifyListeners();
+    }
+  }
+
+  /// Wait for settings to be loaded from SharedPreferences
+  /// This ensures the saved backend URL is available
+  Future<void> ensureInitialized() async {
+    if (_isInitialized) return;
+    
+    // Wait for initialization with timeout
+    int attempts = 0;
+    while (!_isInitialized && attempts < 50) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      attempts++;
     }
   }
 
@@ -45,6 +63,9 @@ class SettingsProvider with ChangeNotifier {
   /// If that fails, scans the local network for a working backend
   Future<bool> attemptBackendDiscovery() async {
     try {
+      // Ensure settings are loaded before attempting discovery
+      await ensureInitialized();
+
       _isDiscoveringBackend = true;
       notifyListeners();
 

@@ -212,7 +212,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   void initState() {
     super.initState();
-    _loadOrders();
+    // Initialize with a pending future that will be resolved when settings are loaded
+    _ordersFuture = _initializeAndLoadOrders();
     _selectedDay = _focusedDay;
     // Default: pickupDate is this month
     final now = DateTime.now();
@@ -221,10 +222,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
     _pickupDateRange = DateTimeRange(start: monthStart, end: monthEnd);
   }
 
+  Future<List<Order>> _initializeAndLoadOrders() async {
+    final settings = context.read<SettingsProvider>();
+    // Wait for settings to be initialized before loading orders
+    await settings.ensureInitialized();
+    return getApiService().getOrders();
+  }
+
   void _loadOrders() {
-    setState(() {
-      _ordersFuture = getApiService().getOrders();
-    });
+    if (mounted) {
+      setState(() {
+        _ordersFuture = getApiService().getOrders();
+      });
+    }
   }
 
   @override

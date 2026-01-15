@@ -11,7 +11,6 @@ import '../../theme/app_theme.dart';
 import '../../theme/app_animations.dart';
 import '../../components/dialogs/add_product_dialog.dart';
 import '../../components/dialogs/add_custom_item_dialog.dart';
-import '../../components/quantity_selector.dart';
 import '../../widgets/labeled_value_row.dart';
 import '../../widgets/note_container.dart';
 import '../../l10n/strings.dart';
@@ -352,6 +351,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 32),
                       ],
                     ),
                   ),

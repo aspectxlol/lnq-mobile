@@ -256,7 +256,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 32, 16, 32),
+                  padding: const EdgeInsets.fromLTRB(16, 32, 16, 96),
                   child: Row(
                     children: [
                       Expanded(
