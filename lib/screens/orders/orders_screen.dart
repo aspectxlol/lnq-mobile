@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../models/order.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/order_filter_provider.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/animated_widgets.dart';
@@ -23,191 +24,12 @@ class OrdersScreen extends StatefulWidget {
   State<OrdersScreen> createState() => _OrdersScreenState();
 }
 
-// Modal dialog for sort and filter controls
-class _SortFilterDialog extends StatefulWidget {
-  final String sortField;
-  final bool sortAscending;
-  final DateTimeRange? pickupDateRange;
-  final bool hidePast;
-  final List<Map<String, String>> sortOptions;
-  final void Function(String, bool, DateTimeRange?, bool) onApply;
-
-  const _SortFilterDialog({
-    required this.sortField,
-    required this.sortAscending,
-    required this.pickupDateRange,
-    required this.hidePast,
-    required this.sortOptions,
-    required this.onApply,
-  });
-
-  @override
-  State<_SortFilterDialog> createState() => _SortFilterDialogState();
-}
-
-class _SortFilterDialogState extends State<_SortFilterDialog> {
-  late String _sortField;
-  late bool _sortAscending;
-  DateTimeRange? _pickupDateRange;
-  late bool _hidePast;
-
-  @override
-  void initState() {
-    super.initState();
-    _sortField = widget.sortField;
-    _sortAscending = widget.sortAscending;
-    _pickupDateRange = widget.pickupDateRange;
-    _hidePast = widget.hidePast;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(AppStrings.trWatch(context, 'sortAndFilter'), style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: () async {
-                  final picked = await showDateRangePicker(
-                    context: context,
-                    initialDateRange: _pickupDateRange,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2030, 12, 31),
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      _pickupDateRange = picked;
-                    });
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.date_range, color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(width: 8),
-                      Text(
-                        _pickupDateRange == null
-                            ? AppStrings.trWatch(context, 'pickupDateRange')
-                            : '${DateFormat('MMM d, yyyy').format(_pickupDateRange!.start)} - ${DateFormat('MMM d, yyyy').format(_pickupDateRange!.end)}',
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<String>(
-                initialValue: _sortField,
-                decoration: InputDecoration(
-                  labelText: AppStrings.trWatch(context, 'sortBy'),
-                  border: const OutlineInputBorder(),
-                ),
-                items: widget.sortOptions
-                    .map((opt) => DropdownMenuItem<String>(
-                          value: opt['value'],
-                          child: Text(AppStrings.trWatch(context, opt['label']!)),
-                        ))
-                    .toList(),
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() {
-                      _sortField = val;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(_sortAscending ? Icons.arrow_upward : Icons.arrow_downward),
-                    tooltip: _sortAscending ? AppStrings.trWatch(context, 'ascending') : AppStrings.trWatch(context, 'descending'),
-                    onPressed: () {
-                      setState(() {
-                        _sortAscending = !_sortAscending;
-                      });
-                    },
-                  ),
-                  Text(AppStrings.trWatch(context, 'sortOrder')),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Checkbox(
-                    value: _hidePast,
-                    onChanged: (val) {
-                      setState(() {
-                        _hidePast = val ?? false;
-                      });
-                    },
-                  ),
-                  Text(AppStrings.trWatch(context, 'hidePast')),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  TextButton.icon(
-                    icon: const Icon(Icons.clear),
-                    label: Text(AppStrings.trWatch(context, 'clearFilters')),
-                    onPressed: () {
-                      setState(() {
-                        _pickupDateRange = null;
-                        _hidePast = false;
-                        _sortField = 'pickupDate';
-                        _sortAscending = true;
-                      });
-                    },
-                  ),
-                  const Spacer(),
-                  ElevatedButton(
-                    onPressed: () {
-                      widget.onApply(_sortField, _sortAscending, _pickupDateRange, _hidePast);
-                      Navigator.of(context).pop();
-                    },
-                    child: Text(AppStrings.trWatch(context, 'apply')),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _OrdersScreenState extends State<OrdersScreen> {
-  String _sortField = 'pickupDate';
-  bool _sortAscending = true;
-  bool _hidePast = false;
   late Future<List<Order>> _ordersFuture;
   OrderView _currentView = OrderView.list;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  String _searchQuery = '';
-  DateTimeRange? _pickupDateRange;
-  final List<Map<String, String>> _sortOptions = [
-    {'value': 'pickupDate', 'label': 'pickupDate'},
-    {'value': 'createdAt', 'label': 'created'},
-    {'value': 'customerName', 'label': 'customerName'},
-    {'value': 'id', 'label': 'orderId'},
-  ];
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -215,11 +37,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
     // Initialize with a pending future that will be resolved when settings are loaded
     _ordersFuture = _initializeAndLoadOrders();
     _selectedDay = _focusedDay;
-    // Default: pickupDate is this month
-    final now = DateTime.now();
-    final monthStart = DateTime(now.year, now.month, 1);
-    final monthEnd = DateTime(now.year, now.month + 1, 0);
-    _pickupDateRange = DateTimeRange(start: monthStart, end: monthEnd);
   }
 
   Future<List<Order>> _initializeAndLoadOrders() async {
@@ -240,32 +57,31 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   Widget build(BuildContext context) {
     context.watch<SettingsProvider>();
+    final filterProvider = context.watch<OrderFiltersAndSorts>();
+    
+    // Don't load orders until filters are loaded
+    if (!filterProvider.isLoaded) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(AppStrings.trWatch(context, 'orders')),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: Text(AppStrings.trWatch(context, 'orders')),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _currentView == OrderView.list
-                  ? Icons.calendar_month
-                  : Icons.view_list,
-            ),
-            onPressed: () {
-              setState(() {
-                _currentView = _currentView == OrderView.list
-                    ? OrderView.calendar
-                    : OrderView.list;
-              });
-            },
-            tooltip: _currentView == OrderView.list
-                ? AppStrings.trWatch(context, 'switchToCalendarView')
-                : AppStrings.trWatch(context, 'switchToListViewOrder'),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(70),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        elevation: 0,
+      ),
+      body: Column(
+        children: [
+          // Search bar and action buttons
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Expanded(
@@ -276,65 +92,102 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      filled: true,
+                      fillColor: AppColors.card,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.border, width: 1.5),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.primary, width: 2),
+                      ),
+                      prefixIconColor: AppColors.mutedForeground,
                     ),
                     onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
+                      filterProvider.setSearchQuery(value);
                     },
                   ),
                 ),
                 const SizedBox(width: 12),
-                IconButton(
-                  icon: const Icon(Icons.tune),
-                  tooltip: AppStrings.trWatch(context, 'sortAndFilter'),
-                  iconSize: 28,
-                  onPressed: () async {
-                    await showDialog(
-                      context: context,
-                      builder: (context) => _SortFilterDialog(
-                        sortField: _sortField,
-                        sortAscending: _sortAscending,
-                        pickupDateRange: _pickupDateRange,
-                        hidePast: _hidePast,
-                        sortOptions: _sortOptions,
-                        onApply: (String sortField, bool sortAscending, DateTimeRange? pickupDateRange, bool hidePast) {
-                          setState(() {
-                            _sortField = sortField;
-                            _sortAscending = sortAscending;
-                            _pickupDateRange = pickupDateRange;
-                            _hidePast = hidePast;
-                          });
-                        },
-                      ),
-                    );
-                  },
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    border: Border.all(color: AppColors.border, width: 1.5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      _currentView == OrderView.list
+                          ? Icons.calendar_month
+                          : Icons.view_list,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _currentView = _currentView == OrderView.list
+                            ? OrderView.calendar
+                            : OrderView.list;
+                      });
+                    },
+                    tooltip: _currentView == OrderView.list
+                        ? AppStrings.trWatch(context, 'switchToCalendarView')
+                        : AppStrings.trWatch(context, 'switchToListViewOrder'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.tune, color: Colors.white),
+                    tooltip: AppStrings.trWatch(context, 'sortAndFilter'),
+                    onPressed: () {
+                      _showFilterBottomSheet(context, filterProvider);
+                    },
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-      ),
-      // End of AppBar actions and filters
-      body: FutureBuilder<List<Order>>(
-        future: _ordersFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SkeletonLoader();
-          } else if (snapshot.hasError) {
-            return Center(child: Text(AppStrings.trWatch(context, 'error')));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return EmptyState(
-              icon: Icons.inbox,
-              title: AppStrings.trWatch(context, 'noOrders'),
-              message: AppStrings.trWatch(context, 'noOrdersFoundForCriteria'),
-            );
-          }
-          final orders = snapshot.data!;
-          return _currentView == OrderView.list
-              ? _buildListView(orders)
-              : _buildCalendarView(orders);
-        },
+          // Body content
+          Expanded(
+            child: FutureBuilder<List<Order>>(
+              future: _ordersFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SkeletonLoader();
+                } else if (snapshot.hasError) {
+                  return Center(child: Text(AppStrings.trWatch(context, 'error')));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return EmptyState(
+                    icon: Icons.inbox,
+                    title: AppStrings.trWatch(context, 'noOrders'),
+                    message: AppStrings.trWatch(context, 'noOrdersFoundForCriteria'),
+                  );
+                }
+                
+                // Apply filters and sorting from the provider
+                final allOrders = snapshot.data!;
+                final filteredAndSortedOrders = filterProvider.applyFiltersAndSort(allOrders);
+                
+                if (filteredAndSortedOrders.isEmpty) {
+                  return EmptyState(
+                    icon: Icons.inbox,
+                    title: AppStrings.trWatch(context, 'noOrders'),
+                    message: AppStrings.trWatch(context, 'noOrdersFoundForCriteria'),
+                  );
+                }
+                
+                return _currentView == OrderView.list
+                    ? _buildListView(filteredAndSortedOrders)
+                    : _buildCalendarView(filteredAndSortedOrders);
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -354,64 +207,368 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
-  Widget _buildListView(List<Order> orders) {
-    // Filter orders by search and pickup date only
-    List<Order> filtered = orders.where((order) {
-      final matchesSearch =
-          _searchQuery.isEmpty ||
-          order.customerName.toLowerCase().contains(
-            _searchQuery.toLowerCase(),
-          ) ||
-          order.id.toString().contains(_searchQuery);
-      bool matchesPickupDate = _pickupDateRange == null ||
-          (order.pickupDate != null &&
-              order.pickupDate!.isAfter(
-                _pickupDateRange!.start.subtract(const Duration(days: 1)),
-              ) &&
-              order.pickupDate!.isBefore(
-                _pickupDateRange!.end.add(const Duration(days: 1)),
-              ));
-      bool notPast = true;
-      if (_hidePast) {
-        final now = DateTime.now();
-        notPast = order.pickupDate != null &&
-            !order.pickupDate!.isBefore(DateTime(now.year, now.month, now.day));
-      }
-      return matchesSearch && matchesPickupDate && (!_hidePast || notPast);
-    }).toList();
+  void _showFilterBottomSheet(BuildContext context, OrderFiltersAndSorts filterProvider) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return Consumer<OrderFiltersAndSorts>(
+          builder: (_, provider, __) {
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.85,
+              maxChildSize: 0.95,
+              minChildSize: 0.5,
+              builder: (context, scrollController) {
+                return Column(
+                  children: [
+                    // Modern bottom sheet header
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: Colors.grey.shade200),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          // Drag handle
+                          Container(
+                            width: 48,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.tune,
+                                color: AppColors.primary,
+                                size: 28,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                AppStrings.trWatch(context, 'sortAndFilter'),
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Scrollable content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: scrollController,
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Sort By Section
+                              _buildSectionHeader(context, 'sortBy', Icons.sort),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  _buildSortChip(context, OrderSortBy.createdDateDesc, 'createdDateNewest', provider),
+                                  _buildSortChip(context, OrderSortBy.createdDateAsc, 'createdDateOldest', provider),
+                                  _buildSortChip(context, OrderSortBy.pickupDateAsc, 'pickupDateEarliest', provider),
+                                  _buildSortChip(context, OrderSortBy.pickupDateDesc, 'pickupDateLatest', provider),
+                                  _buildSortChip(context, OrderSortBy.totalAsc, 'totalAmountLowToHigh', provider),
+                                  _buildSortChip(context, OrderSortBy.totalDesc, 'totalAmountHighToLow', provider),
+                                  _buildSortChip(context, OrderSortBy.customerName, 'customerNameAZ', provider),
+                                ],
+                              ),
+                              const SizedBox(height: 32),
+                              
+                              // Order Status Filter
+                              _buildSectionHeader(context, 'orderStatus', Icons.bookmark_outline),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  _buildStatusChip(context, OrderStatus.all, 'all', provider),
+                                  _buildStatusChip(context, OrderStatus.new_, 'new', provider),
+                                  _buildStatusChip(context, OrderStatus.scheduled, 'scheduled', provider),
+                                ],
+                              ),
+                              const SizedBox(height: 32),
+                              
+                              // Date Range Filter Section
+                              _buildSectionHeader(context, 'dateFilter', Icons.calendar_month),
+                              const SizedBox(height: 12),
+                              
+                              // Active date filter toggle
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  _buildDateFilterChip(context, 'createdDate', provider),
+                                  _buildDateFilterChip(context, 'pickupDate', provider),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              
+                              // Date range picker
+                              _buildDateRangePicker(context, provider),
+                              const SizedBox(height: 32),
+                              
+                              // Hide past pickup dates checkbox
+                              _buildCheckboxOption(
+                                context,
+                                AppStrings.trWatch(context, 'hidePastPickupDates'),
+                                provider.hidePastPickupDates,
+                                (val) => provider.setHidePastPickupDates(val ?? false),
+                              ),
+                              const SizedBox(height: 32),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    // Bottom action buttons
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: Colors.grey.shade200),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.refresh),
+                              label: Text(AppStrings.trWatch(context, 'clearFilters')),
+                              onPressed: () {
+                                provider.resetAll();
+                                Navigator.pop(sheetContext);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              icon: const Icon(Icons.check),
+                              label: Text(AppStrings.trWatch(context, 'apply')),
+                              onPressed: () {
+                                Navigator.pop(sheetContext);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
 
-    // Sorting
-    filtered.sort((a, b) {
-      int cmp = 0;
-      switch (_sortField) {
-        case 'pickupDate':
-          if (a.pickupDate == null && b.pickupDate == null) {
-            cmp = 0;
-          } else if (a.pickupDate == null) {
-            cmp = 1;
-          } else if (b.pickupDate == null) {
-            cmp = -1;
+  Widget _buildSectionHeader(BuildContext context, String label, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppColors.primary),
+        const SizedBox(width: 8),
+        Text(
+          AppStrings.trWatch(context, label),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.primary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSortChip(BuildContext context, OrderSortBy sortType, String label, OrderFiltersAndSorts filterProvider) {
+    final isSelected = filterProvider.sortBy == sortType;
+    return FilterChip(
+      label: Text(AppStrings.trWatch(context, label)),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          filterProvider.setSortBy(sortType);
+        }
+      },
+      backgroundColor: Colors.transparent,
+      selectedColor: AppColors.primary.withValues(alpha: 0.15),
+      side: BorderSide(
+        color: isSelected ? AppColors.primary : Colors.grey.shade300,
+        width: isSelected ? 2 : 1,
+      ),
+      labelStyle: TextStyle(
+        color: isSelected ? AppColors.primary : Colors.grey.shade700,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+      ),
+    );
+  }
+  
+  Widget _buildStatusChip(BuildContext context, OrderStatus status, String label, OrderFiltersAndSorts filterProvider) {
+    final isSelected = filterProvider.orderStatus == status;
+    return FilterChip(
+      label: Text(AppStrings.trWatch(context, label)),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          filterProvider.setOrderStatus(status);
+        }
+      },
+      backgroundColor: Colors.transparent,
+      selectedColor: AppColors.primary.withValues(alpha: 0.15),
+      side: BorderSide(
+        color: isSelected ? AppColors.primary : Colors.grey.shade300,
+        width: isSelected ? 2 : 1,
+      ),
+      labelStyle: TextStyle(
+        color: isSelected ? AppColors.primary : Colors.grey.shade700,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+      ),
+    );
+  }
+  
+  Widget _buildDateFilterChip(BuildContext context, String filterType, OrderFiltersAndSorts filterProvider) {
+    final label = filterType == 'createdDate' ? 'createdDate' : 'pickupDate';
+    final isSelected = filterProvider.activeDateFilter == filterType;
+    return FilterChip(
+      label: Text(AppStrings.trWatch(context, label)),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          filterProvider.setActiveDateFilter(filterType);
+        }
+      },
+      backgroundColor: Colors.transparent,
+      selectedColor: AppColors.primary.withValues(alpha: 0.15),
+      side: BorderSide(
+        color: isSelected ? AppColors.primary : Colors.grey.shade300,
+        width: isSelected ? 2 : 1,
+      ),
+      labelStyle: TextStyle(
+        color: isSelected ? AppColors.primary : Colors.grey.shade700,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+      ),
+    );
+  }
+
+  Widget _buildDateRangePicker(BuildContext context, OrderFiltersAndSorts filterProvider) {
+    return GestureDetector(
+      onTap: () async {
+        DateTimeRange? initial;
+        if (filterProvider.activeDateFilter == 'createdDate') {
+          initial = filterProvider.createdDateRange;
+        } else {
+          initial = filterProvider.pickupDateRange;
+        }
+        
+        final picked = await showDateRangePicker(
+          context: context,
+          initialDateRange: initial,
+          firstDate: DateTime(2020),
+          lastDate: DateTime(2030, 12, 31),
+        );
+        
+        if (picked != null) {
+          if (filterProvider.activeDateFilter == 'createdDate') {
+            filterProvider.setCreatedDateRange(picked);
           } else {
-            cmp = a.pickupDate!.compareTo(b.pickupDate!);
+            filterProvider.setPickupDateRange(picked);
           }
-          break;
-        case 'createdAt':
-          cmp = a.createdAt.compareTo(b.createdAt);
-          break;
-        case 'customerName':
-          cmp = a.customerName.toLowerCase().compareTo(b.customerName.toLowerCase());
-          break;
-        case 'id':
-          cmp = a.id.toString().compareTo(b.id.toString());
-          break;
-      }
-      return _sortAscending ? cmp : -cmp;
-    });
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(12),
+          color: AppColors.primary.withValues(alpha: 0.05),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.date_range, color: AppColors.primary, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _getDateRangeDisplay(filterProvider),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+            Icon(Icons.arrow_forward, color: AppColors.primary, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCheckboxOption(BuildContext context, String label, bool value, Function(bool?) onChanged) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(12),
+        color: value ? AppColors.primary.withValues(alpha: 0.05) : Colors.transparent,
+      ),
+      child: Row(
+        children: [
+          Checkbox(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.primary,
+          ),
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getDateRangeDisplay(OrderFiltersAndSorts filterProvider) {
+    DateTimeRange? range;
+    if (filterProvider.activeDateFilter == 'createdDate') {
+      range = filterProvider.createdDateRange;
+    } else {
+      range = filterProvider.pickupDateRange;
+    }
+    
+    if (range == null) {
+      return AppStrings.tr(context, 'selectDateRange');
+    }
+    return '${DateFormat('MMM d, yyyy').format(range.start)} - ${DateFormat('MMM d, yyyy').format(range.end)}';
+  }
+
+  Widget _buildListView(List<Order> orders) {
+    // Orders are already filtered and sorted by the provider
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96), // extra bottom padding for FAB
-      itemCount: filtered.length,
+      itemCount: orders.length,
       itemBuilder: (context, index) {
-        final order = filtered[index];
+        final order = orders[index];
         return OrderCard(
           order: order,
           onTap: () async {
@@ -459,7 +616,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: const EdgeInsets.only(bottom: 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

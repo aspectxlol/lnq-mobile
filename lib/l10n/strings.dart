@@ -49,6 +49,24 @@ class AppStrings {
       'pickup': 'Pickup',
       'items': 'items',
 
+      // Filters & Sorts
+      'filtersAndSorts': 'Filters & Sorts',
+      'orderStatus': 'Order Status',
+      'all': 'All',
+      'dateFilter': 'Date Filter',
+      'selectDateRange': 'Select Date Range',
+      'hidePastPickupDates': 'Hide past pickup dates',
+      'onlyShowOrdersWithFuturePickupDates': 'Only show orders with future pickup dates',
+      'createdDateNewest': 'Created Date (Newest)',
+      'createdDateOldest': 'Created Date (Oldest)',
+      'pickupDateEarliest': 'Pickup Date (Earliest)',
+      'pickupDateLatest': 'Pickup Date (Latest)',
+      'totalAmountLowToHigh': 'Total Amount (Low to High)',
+      'totalAmountHighToLow': 'Total Amount (High to Low)',
+      'customerNameAZ': 'Customer Name (A-Z)',
+      'noNotes': 'No order notes',
+      'noItemNotes': 'No item notes',
+
       // Create/Edit Order
       'createOrder': 'Create Order',
       'editOrder': 'Edit Order',
@@ -240,6 +258,24 @@ class AppStrings {
       'new': 'Baru',
       'pickup': 'Pengambilan',
       'items': 'item',
+
+      // Filters & Sorts
+      'filtersAndSorts': 'Filter & Sortir',
+      'orderStatus': 'Status Pesanan',
+      'all': 'Semua',
+      'dateFilter': 'Filter Tanggal',
+      'selectDateRange': 'Pilih Rentang Tanggal',
+      'hidePastPickupDates': 'Sembunyikan tanggal pengambilan di masa lalu',
+      'onlyShowOrdersWithFuturePickupDates': 'Hanya tampilkan pesanan dengan tanggal pengambilan di masa depan',
+      'createdDateNewest': 'Tanggal Dibuat (Terbaru)',
+      'createdDateOldest': 'Tanggal Dibuat (Tertua)',
+      'pickupDateEarliest': 'Tanggal Pengambilan (Paling Awal)',
+      'pickupDateLatest': 'Tanggal Pengambilan (Paling Akhir)',
+      'totalAmountLowToHigh': 'Jumlah Total (Rendah ke Tinggi)',
+      'totalAmountHighToLow': 'Jumlah Total (Tinggi ke Rendah)',
+      'customerNameAZ': 'Nama Pelanggan (A-Z)',
+      'noNotes': 'Tidak ada catatan pesanan',
+      'noItemNotes': 'Tidak ada catatan item',
 
       // Create/Edit Order
       'createOrder': 'Buat Pesanan',

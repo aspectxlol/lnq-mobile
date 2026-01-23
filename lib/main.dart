@@ -6,16 +6,20 @@ import 'package:lnq/screens/products/edit_product_screen.dart';
 import 'package:provider/provider.dart';
 import 'constants/app_constants.dart';
 import 'providers/settings_provider.dart';
+import 'providers/order_filter_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/products/products_screen.dart';
 import 'screens/orders/orders_screen.dart';
 import 'screens/settings/settings_screen.dart';
-import '../l10n/strings.dart';
+import 'l10n/strings.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => SettingsProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => OrderFiltersAndSorts()),
+      ],
       child: const MyApp(),
     ),
   );
