@@ -37,7 +37,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
   late TextEditingController _customerNameController;
   late TextEditingController _notesController;
   final Map<int, OrderItemData> _items = {};
-  // DateTime? _pickupDate; // Removed unused field
+  DateTime? _pickupDate;
   late Future<List<Product>> _productsFuture;
   bool _isSaving = false;
   String? _errorMessage;
@@ -239,6 +239,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
         );
       }
     }
+    _pickupDate = widget.order.pickupDate;
     _loadProducts();
   }
 
@@ -371,6 +372,69 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                                 ),
                               ),
                               validator: (v) => v == null || v.trim().isEmpty ? AppStrings.tr(context, 'enterCustomerName') : null,
+                            ),
+                            const SizedBox(height: 16),
+                            // Pickup Date Field
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final picked = await showDatePicker(
+                                        context: context,
+                                        initialDate: _pickupDate ?? DateTime.now(),
+                                        firstDate: DateTime(2000),
+                                        lastDate: DateTime(2100),
+                                      );
+                                      if (picked != null) {
+                                        setState(() {
+                                          _pickupDate = picked;
+                                        });
+                                      }
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: InputDecorator(
+                                      decoration: InputDecoration(
+                                        labelText: AppStrings.tr(context, 'pickupDate'),
+                                        prefixIcon: const Icon(Icons.event),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.transparent,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: AppColors.border, width: 1.5),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: AppColors.primary, width: 2),
+                                        ),
+                                        suffixIcon: _pickupDate != null
+                                            ? IconButton(
+                                                icon: const Icon(Icons.clear),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _pickupDate = null;
+                                                  });
+                                                },
+                                              )
+                                            : null,
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                        child: Text(
+                                          _pickupDate != null
+                                              ? '${_pickupDate!.year.toString().padLeft(4, '0')}-${_pickupDate!.month.toString().padLeft(2, '0')}-${_pickupDate!.day.toString().padLeft(2, '0')}'
+                                              : AppStrings.tr(context, 'noPickupDateSet'),
+                                          style: Theme.of(context).textTheme.bodyLarge,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 16),
                             // Notes Field
@@ -687,6 +751,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                           await getApiService().updateOrder(
                             widget.order.id,
                             customerName: _customerNameController.text.trim(),
+                            pickupDate: _pickupDate,
                             notes: _notesController.text.trim().isEmpty
                                 ? null
                                 : _notesController.text.trim(),
@@ -702,7 +767,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                             );
                             navigator.pop({
                               'customerName': _customerNameController.text.trim(),
-                              'pickupDate': null, // Add pickup date if editing is supported
+                              'pickupDate': _pickupDate,
                               'notes': _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
                               'items': items,
                             });
