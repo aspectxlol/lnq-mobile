@@ -68,6 +68,10 @@ class AppStrings {
       'noItemNotes': 'No item notes',
 
       // Create/Edit Order
+      'editProductItem': 'Edit Product Item',
+      'editCustomItem': 'Edit Custom Item',
+      'customName': 'Custom Name',
+      'customPrice': 'Custom Price',
       'createOrder': 'Create Order',
       'editOrder': 'Edit Order',
       'editOrderTitle': 'Edit Order',
@@ -279,6 +283,10 @@ class AppStrings {
       'noItemNotes': 'Tidak ada catatan item',
 
       // Create/Edit Order
+      'editProductItem': 'Edit Item Produk',
+      'editCustomItem': 'Edit Item Kustom',
+      'customName': 'Nama Kustom',
+      'customPrice': 'Harga Kustom',
       'createOrder': 'Buat Pesanan',
       'editOrder': 'Edit Pesanan',
       'editOrderTitle': 'Edit Pesanan',

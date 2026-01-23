@@ -17,7 +17,7 @@ class CreateOrderRequest {
       'pickupDate': pickupDate == null
           ? null
           : '${pickupDate!.year.toString().padLeft(4, '0')}-${pickupDate!.month.toString().padLeft(2, '0')}-${pickupDate!.day.toString().padLeft(2, '0')}',
-      'notes': notes ?? '',
+      if (notes != null) 'notes': notes,
       'items': items.map((item) => item.toJson()).toList(),
     };
   }

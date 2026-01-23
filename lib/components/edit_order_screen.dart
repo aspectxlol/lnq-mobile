@@ -19,6 +19,20 @@ class EditOrderScreen extends StatefulWidget {
 }
 
 class _EditOrderScreenState extends State<EditOrderScreen> {
+    Future<void> _showAddCustomItemDialog(List<Product> products) async {
+      // Open the dialog in custom mode by passing a blank custom item
+      final newItem = await _showEditItemDialog(
+        context,
+        products: products,
+        item: OrderItemData.custom(customName: '', customPrice: 0, notes: ''),
+      );
+      if (newItem != null && newItem.isCustom) {
+        setState(() {
+          final key = DateTime.now().millisecondsSinceEpoch * -1;
+          _items[key] = newItem;
+        });
+      }
+    }
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _customerNameController;
   late TextEditingController _notesController;
@@ -54,36 +68,72 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
     return await showDialog<OrderItemData>(
       context: context,
       builder: (dialogContext) {
-        bool custom = isCustom;
-        return StatefulBuilder(
-          builder: (statefulContext, setState) {
-            return AlertDialog(
-              title: Text(
-                custom
-                    ? AppStrings.trWatch(statefulContext, 'editCustomItem')
-                    : AppStrings.trWatch(statefulContext, 'editProductItem'),
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        ChoiceChip(
-                          label: Text(AppStrings.trWatch(statefulContext, 'product')),
-                          selected: !custom,
-                          onSelected: (v) => setState(() => custom = !v),
-                        ),
-                        const SizedBox(width: 8),
-                        ChoiceChip(
-                          label: Text(AppStrings.trWatch(statefulContext, 'custom')),
-                          selected: custom,
-                          onSelected: (v) => setState(() => custom = v),
-                        ),
-                      ],
+        // Only show custom dialog if adding/editing a custom item
+        if (isCustom) {
+          return AlertDialog(
+            title: Text(AppStrings.trWatch(dialogContext, 'editCustomItem')),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: AppStrings.trWatch(dialogContext, 'customName'),
                     ),
-                    const SizedBox(height: 16),
-                    if (!custom) ...[
+                  ),
+                  const SizedBox(height: 8),
+                  PriceInput(
+                    controller: priceController,
+                    labelText: AppStrings.trWatch(dialogContext, 'customPrice'),
+                    prefixText: 'Rp ',
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: notesController,
+                    decoration: InputDecoration(
+                      labelText: AppStrings.trWatch(dialogContext, 'notes'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                },
+                child: Text(AppStrings.trWatch(dialogContext, 'cancel')),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final name = nameController.text.trim();
+                  final priceText = priceController.text.replaceAll(RegExp(r'[^0-9]'), '');
+                  final price = priceText.isEmpty ? null : int.tryParse(priceText);
+                  if (name.isEmpty || price == null) return;
+                  Navigator.pop(
+                    dialogContext,
+                    OrderItemData.custom(
+                      customName: name,
+                      customPrice: price,
+                      notes: notesController.text.trim(),
+                    ),
+                  );
+                },
+                child: Text(AppStrings.trWatch(dialogContext, 'save')),
+              ),
+            ],
+          );
+        } else {
+          // Product item dialog (unchanged)
+          return StatefulBuilder(
+            builder: (statefulContext, setState) {
+              return AlertDialog(
+                title: Text(AppStrings.trWatch(statefulContext, 'editProductItem')),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                       DropdownButtonFormField<int>(
                         initialValue: selectedProductId,
                         items: products
@@ -115,64 +165,34 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                         labelText: AppStrings.trWatch(statefulContext, 'priceAtSaleOptional'),
                         prefixText: 'Rp ',
                       ),
-                    ] else ...[
-                      TextFormField(
-                        controller: nameController,
-                        decoration: InputDecoration(
-                          labelText: AppStrings.trWatch(statefulContext, 'customName'),
-                        ),
-                      ),
                       const SizedBox(height: 8),
-                      PriceInput(
-                        controller: priceController,
-                        labelText: AppStrings.trWatch(statefulContext, 'customPrice'),
-                        prefixText: 'Rp ',
+                      TextFormField(
+                        controller: notesController,
+                        decoration: InputDecoration(
+                          labelText: AppStrings.trWatch(statefulContext, 'notes'),
+                        ),
                       ),
                     ],
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: notesController,
-                      decoration: InputDecoration(
-                        labelText: AppStrings.trWatch(statefulContext, 'notes'),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                  },
-                  child: Text(AppStrings.trWatch(statefulContext, 'cancel')),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (custom) {
-                      final name = nameController.text.trim();
-                      // Remove non-digit characters from formatted price
-                      final priceText = priceController.text.replaceAll(RegExp(r'[^0-9]'), '');
-                      final price = priceText.isEmpty ? null : int.tryParse(priceText);
-                      if (name.isEmpty || price == null) return;
-                      Navigator.pop(
-                        dialogContext,
-                        OrderItemData.custom(
-                          customName: name,
-                          customPrice: price,
-                          notes: notesController.text.trim(),
-                        ),
-                      );
-                    } else {
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(statefulContext);
+                    },
+                    child: Text(AppStrings.trWatch(statefulContext, 'cancel')),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
                       if (selectedProductId == null) return;
                       final product = products.firstWhereOrNull(
                         (p) => p.id == selectedProductId,
                       );
                       if (product == null) return;
-                      // Remove non-digit characters from formatted price
                       final priceAtSaleText = priceAtSaleController.text.replaceAll(RegExp(r'[^0-9]'), '');
                       final priceAtSale = priceAtSaleText.isNotEmpty ? int.tryParse(priceAtSaleText) : null;
                       Navigator.pop(
-                        dialogContext,
+                        statefulContext,
                         OrderItemData.product(
                           productId: selectedProductId!,
                           amount: amount,
@@ -181,14 +201,14 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                           priceAtSale: priceAtSale ?? product.price,
                         ),
                       );
-                    }
-                  },
-                  child: Text(AppStrings.trWatch(statefulContext, 'save')),
-                ),
-              ],
-            );
-          },
-        );
+                    },
+                    child: Text(AppStrings.trWatch(statefulContext, 'save')),
+                  ),
+                ],
+              );
+            },
+          );
+        }
       },
     );
   }
@@ -518,7 +538,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.add),
-                      label: Text(AppStrings.tr(context, 'addItem')),
+                        label: Text(AppStrings.trWatch(context, 'addItem')),
                       onPressed: () async {
                         final newItem = await _showEditItemDialog(context, products: products);
                         if (newItem != null) {
@@ -529,6 +549,23 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // Add Custom Item Button
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.add_circle_outline),
+                        label: Text(AppStrings.trWatch(context, 'addCustom')),
+                      onPressed: () => _showAddCustomItemDialog(products),
+                      style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -552,12 +589,12 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              AppStrings.tr(context, 'totalAmount'),
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w500,
+                              Text(
+                                AppStrings.trWatch(context, 'totalAmount'),
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
                             Text(
                               formatIdr(total),
                               style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -591,7 +628,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  _errorMessage!,
+                                    AppStrings.trWatch(context, _errorMessage!),
                                   style: TextStyle(color: AppColors.destructive),
                                 ),
                               ),
