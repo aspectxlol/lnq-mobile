@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
-import 'dart:ui';
 import '../models/order.dart';
 import '../models/product.dart';
 import '../models/order_item_data.dart';
@@ -151,9 +150,9 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                   onPressed: () {
                     if (custom) {
                       final name = nameController.text.trim();
-                      final price = int.tryParse(
-                        priceController.text.trim(),
-                      );
+                      // Remove non-digit characters from formatted price
+                      final priceText = priceController.text.replaceAll(RegExp(r'[^0-9]'), '');
+                      final price = priceText.isEmpty ? null : int.tryParse(priceText);
                       if (name.isEmpty || price == null) return;
                       Navigator.pop(
                         dialogContext,
@@ -169,9 +168,9 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                         (p) => p.id == selectedProductId,
                       );
                       if (product == null) return;
-                      final priceAtSale = int.tryParse(
-                        priceAtSaleController.text.trim(),
-                      );
+                      // Remove non-digit characters from formatted price
+                      final priceAtSaleText = priceAtSaleController.text.replaceAll(RegExp(r'[^0-9]'), '');
+                      final priceAtSale = priceAtSaleText.isNotEmpty ? int.tryParse(priceAtSaleText) : null;
                       Navigator.pop(
                         dialogContext,
                         OrderItemData.product(
@@ -239,7 +238,10 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(AppStrings.tr(context, 'editOrderTitle'))),
+      appBar: AppBar(
+        title: Text(AppStrings.tr(context, 'editOrderTitle')),
+        elevation: 0,
+      ),
       body: FutureBuilder<List<Product>>(
         future: _productsFuture,
         builder: (context, snapshot) {
@@ -298,225 +300,410 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                      child: Stack(
-                        children: [
-                          // Glassmorphism background
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.primary.withValues(alpha: 0.10),
-                                  AppColors.primary.withValues(alpha: 0.05),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.18),
-                                width: 1.5,
-                              ),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primary.withValues(alpha: 0.08),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                              child: Container(),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(28),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: AppColors.border, width: 1.5),
+                      ),
+                      color: AppColors.card,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Header
+                            Row(
                               children: [
-                                Row(
-                                  children: [
-                                    Icon(Icons.sticky_note_2_outlined, color: AppColors.primary, size: 28),
-                                    const SizedBox(width: 8),
-                                    Text(AppStrings.get('editOrderTitle'), style: Theme.of(context).textTheme.titleLarge),
-                                  ],
-                                ),
-                                const SizedBox(height: 24),
-                                TextFormField(
-                                  controller: _customerNameController,
-                                  decoration: InputDecoration(
-                                    labelText: AppStrings.tr(context, 'customerName'),
-                                  ),
-                                  validator: (v) => v == null || v.trim().isEmpty ? AppStrings.tr(context, 'enterCustomerName') : null,
-                                ),
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _notesController,
-                                  decoration: InputDecoration(
-                                    labelText: AppStrings.tr(context, 'notes'),
-                                  ),
-                                  maxLines: 2,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(AppStrings.tr(context, 'orderItems'), style: Theme.of(context).textTheme.titleMedium),
-                                const SizedBox(height: 8),
-                                ..._items.entries.map((entry) {
-                                  final item = entry.value;
-                                  return Card(
-                                    margin: const EdgeInsets.symmetric(vertical: 4),
-                                    child: ListTile(
-                                      title: Text(item.isCustom ? item.customName ?? '' : item.product?.name ?? ''),
-                                      subtitle: Text(item.isCustom
-                                          ? '${AppStrings.tr(context, 'customPrice')}: ${formatIdr(item.customPrice ?? 0)}'
-                                          : '${AppStrings.tr(context, 'amount')}: ${item.amount}  |  ${AppStrings.tr(context, 'priceAtSaleOptional')}: ${formatIdr(item.priceAtSale ?? item.product?.price ?? 0)}'),
-                                      trailing: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.edit),
-                                            onPressed: () async {
-                                              final edited = await _showEditItemDialog(context, products: products, item: item);
-                                              if (edited != null) {
-                                                setState(() {
-                                                  _items[entry.key] = edited;
-                                                });
-                                              }
-                                            },
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.delete),
-                                            onPressed: () {
-                                              setState(() {
-                                                _items.remove(entry.key);
-                                              });
-                                            },
-                                          ),
-                                        ],
-                                      ),
+                                Icon(Icons.edit_outlined, color: AppColors.primary, size: 24),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    AppStrings.tr(context, 'editOrderTitle'),
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                  );
-                                }),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    ElevatedButton.icon(
-                                      icon: const Icon(Icons.add),
-                                      label: Text(AppStrings.tr(context, 'addItem')),
-                                      onPressed: () async {
-                                        final newItem = await _showEditItemDialog(context, products: products);
-                                        if (newItem != null) {
-                                          setState(() {
-                                            // Use a unique key for custom items
-                                            final key = newItem.isCustom ? DateTime.now().millisecondsSinceEpoch * -1 : newItem.productId!;
-                                            _items[key] = newItem;
-                                          });
-                                        }
-                                      },
-                                    ),
-                                    const Spacer(),
-                                    Text('${AppStrings.tr(context, 'total')}: ${formatIdr(total)}', style: Theme.of(context).textTheme.titleMedium),
-                                  ],
-                                ),
-                                const SizedBox(height: 24),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: _isSaving
-                                        ? null
-                                        : () async {
-                                            if (!_formKey.currentState!.validate()) return;
-                                            if (_items.isEmpty) {
-                                              setState(() {
-                                                _errorMessage = AppStrings.tr(context, 'pleaseAddAtLeastOneItem');
-                                              });
-                                              return;
-                                            }
-
-                                            setState(() {
-                                              _isSaving = true;
-                                              _errorMessage = null;
-                                            });
-
-                                            try {
-                                              // Convert items to CreateOrderItem format
-                                              final items = <create_order.CreateOrderItem>[];
-                                              for (final item in _items.values) {
-                                                if (item.isCustom) {
-                                                  items.add(
-                                                    create_order.CustomOrderItem(
-                                                      customName: item.customName ?? '',
-                                                      customPrice: item.customPrice ?? 0,
-                                                      notes: item.notes,
-                                                    ),
-                                                  );
-                                                } else {
-                                                  items.add(
-                                                    create_order.ProductOrderItem(
-                                                      productId: item.productId ?? 0,
-                                                      amount: item.amount,
-                                                      notes: item.notes,
-                                                      priceAtSale: item.priceAtSale,
-                                                    ),
-                                                  );
-                                                }
-                                              }
-
-                                              // Capture navigator and messenger before await
-                                              final navigator = Navigator.of(context);
-                                              final messenger = ScaffoldMessenger.of(context);
-                                              final successMessage = AppStrings.tr(context, 'orderUpdatedSuccessfully');
-
-                                              // Update the order via API
-                                              await getApiService().updateOrder(
-                                                widget.order.id,
-                                                customerName: _customerNameController.text.trim(),
-                                                notes: _notesController.text.trim().isEmpty
-                                                    ? null
-                                                    : _notesController.text.trim(),
-                                                items: items,
-                                              );
-
-                                              if (mounted) {
-                                                messenger.showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(successMessage),
-                                                    backgroundColor: AppColors.success,
-                                                  ),
-                                                );
-                                                navigator.pop(true);
-                                              }
-                                            } catch (e) {
-                                              if (mounted) {
-                                                setState(() {
-                                                  _errorMessage = e.toString();
-                                                });
-                                              }
-                                            } finally {
-                                              if (mounted) {
-                                                setState(() => _isSaving = false);
-                                              }
-                                            }
-                                          },
-                                    child: _isSaving
-                                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                        : Text(AppStrings.tr(context, 'save')),
                                   ),
                                 ),
-                                if (_errorMessage != null) ...[
-                                  const SizedBox(height: 12),
-                                  Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                                ],
-                                const SizedBox(height: 96),
                               ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 20),
+                            // Customer Name Field
+                            TextFormField(
+                              controller: _customerNameController,
+                              decoration: InputDecoration(
+                                labelText: AppStrings.tr(context, 'customerName'),
+                                prefixIcon: const Icon(Icons.person_outlined),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                filled: true,
+                                fillColor: Colors.transparent,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: AppColors.border, width: 1.5),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: AppColors.primary, width: 2),
+                                ),
+                              ),
+                              validator: (v) => v == null || v.trim().isEmpty ? AppStrings.tr(context, 'enterCustomerName') : null,
+                            ),
+                            const SizedBox(height: 16),
+                            // Notes Field
+                            TextFormField(
+                              controller: _notesController,
+                              decoration: InputDecoration(
+                                labelText: AppStrings.tr(context, 'notes'),
+                                prefixIcon: const Icon(Icons.note_outlined),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                filled: true,
+                                fillColor: Colors.transparent,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: AppColors.border, width: 1.5),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: AppColors.primary, width: 2),
+                                ),
+                              ),
+                              maxLines: 3,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
+                ),
+                // Items Section
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.shopping_cart_outlined, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          AppStrings.tr(context, 'orderItems'),
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${_items.length}',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Items List
+                _items.isEmpty
+                    ? SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.shopping_cart_outlined,
+                                  size: 64,
+                                  color: AppColors.mutedForeground,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  AppStrings.tr(context, 'noItemsAdded'),
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: AppColors.mutedForeground,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                    : SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final entry = _items.entries.toList()[index];
+                              final item = entry.value;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Card(
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: BorderSide(color: AppColors.border, width: 1),
+                                  ),
+                                  color: AppColors.card,
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    leading: Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          '${item.amount}x',
+                                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    title: Text(
+                                      item.isCustom ? item.customName ?? '' : item.product?.name ?? '',
+                                      style: Theme.of(context).textTheme.titleMedium,
+                                    ),
+                                    subtitle: Text(
+                                      item.isCustom
+                                          ? '${AppStrings.tr(context, 'customPrice')}: ${formatIdr(item.customPrice ?? 0)}'
+                                          : '${AppStrings.tr(context, 'priceAtSaleOptional')}: ${formatIdr(item.priceAtSale ?? item.product?.price ?? 0)}',
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: AppColors.mutedForeground,
+                                      ),
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit_outlined),
+                                          onPressed: () async {
+                                            final edited = await _showEditItemDialog(context, products: products, item: item);
+                                            if (edited != null) {
+                                              setState(() {
+                                                _items[entry.key] = edited;
+                                              });
+                                            }
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline),
+                                          onPressed: () {
+                                            setState(() {
+                                              _items.remove(entry.key);
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            childCount: _items.length,
+                          ),
+                        ),
+                      ),
+                // Add Item Button
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: Text(AppStrings.tr(context, 'addItem')),
+                      onPressed: () async {
+                        final newItem = await _showEditItemDialog(context, products: products);
+                        if (newItem != null) {
+                          setState(() {
+                            final key = newItem.isCustom ? DateTime.now().millisecondsSinceEpoch * -1 : newItem.productId!;
+                            _items[key] = newItem;
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // Total Section
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                    child: Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              AppStrings.tr(context, 'totalAmount'),
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              formatIdr(total),
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // Error Message
+                if (_errorMessage != null)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      child: Card(
+                        elevation: 0,
+                        color: AppColors.destructive.withValues(alpha: 0.1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: AppColors.destructive, width: 1),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Icon(Icons.error_outline, color: AppColors.destructive),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage!,
+                                  style: TextStyle(color: AppColors.destructive),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                // Save Button
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : () async {
+                        if (!_formKey.currentState!.validate()) return;
+                        if (_items.isEmpty) {
+                          setState(() {
+                            _errorMessage = AppStrings.tr(context, 'pleaseAddAtLeastOneItem');
+                          });
+                          return;
+                        }
+
+                        setState(() {
+                          _isSaving = true;
+                          _errorMessage = null;
+                        });
+
+                        try {
+                          final items = <create_order.CreateOrderItem>[];
+                          for (final item in _items.values) {
+                            if (item.isCustom) {
+                              items.add(
+                                create_order.CustomOrderItem(
+                                  customName: item.customName ?? '',
+                                  customPrice: item.customPrice ?? 0,
+                                  notes: item.notes,
+                                ),
+                              );
+                            } else {
+                              items.add(
+                                create_order.ProductOrderItem(
+                                  productId: item.productId ?? 0,
+                                  amount: item.amount,
+                                  notes: item.notes,
+                                  priceAtSale: item.priceAtSale,
+                                ),
+                              );
+                            }
+                          }
+
+                          final navigator = Navigator.of(context);
+                          final messenger = ScaffoldMessenger.of(context);
+                          final successMessage = AppStrings.tr(context, 'orderUpdatedSuccessfully');
+
+                          await getApiService().updateOrder(
+                            widget.order.id,
+                            customerName: _customerNameController.text.trim(),
+                            notes: _notesController.text.trim().isEmpty
+                                ? null
+                                : _notesController.text.trim(),
+                            items: items,
+                          );
+
+                          if (mounted) {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(successMessage),
+                                backgroundColor: AppColors.success,
+                              ),
+                            );
+                            navigator.pop({
+                              'customerName': _customerNameController.text.trim(),
+                              'pickupDate': null, // Add pickup date if editing is supported
+                              'notes': _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+                              'items': items,
+                            });
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            setState(() {
+                              _errorMessage = e.toString();
+                            });
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() => _isSaving = false);
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(
+                              AppStrings.tr(context, 'save'),
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                    ),
+                  ),
+                ),
+                // Bottom Padding
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 16),
                 ),
               ],
             ),

@@ -109,6 +109,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppStrings.trWatch(context, 'orderDetails')),
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -121,7 +122,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ],
       ),
       body: FutureBuilder<Order>(
-        future: _orderFuture, 
+        future: _orderFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -134,14 +135,19 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           final total = order.items.fold(0, (sum, item) => sum + item.totalPrice);
           return CustomScrollView(
             slivers: [
+              // Order Info Card
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: AppColors.border, width: 1.5),
+                    ),
+                    color: AppColors.card,
                     child: Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -153,8 +159,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Text(order.customerName,
-                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                                child: Text(
+                                  order.customerName,
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                                ),
                               ),
                             ],
                           ),
@@ -179,8 +187,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                 Icon(Icons.sticky_note_2_outlined, color: AppColors.primary, size: 20),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: Text(order.notes!,
-                                      style: Theme.of(context).textTheme.bodyLarge),
+                                  child: Text(
+                                    order.notes!,
+                                    style: Theme.of(context).textTheme.bodyLarge,
+                                  ),
                                 ),
                               ],
                             ),
@@ -191,19 +201,31 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   ),
                 ),
               ),
+              // Items Header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                   child: Row(
                     children: [
                       Icon(Icons.shopping_cart_outlined, color: AppColors.primary),
                       const SizedBox(width: 8),
-                      Text(AppStrings.trWatch(context, 'orderItems'),
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      Text(
+                        AppStrings.trWatch(context, 'orderItems'),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${order.items.length}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
+              // Items List
               order.items.isEmpty
                   ? SliverToBoxAdapter(
                       child: Padding(
@@ -213,50 +235,74 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             children: [
                               Icon(Icons.shopping_cart_outlined, size: 64, color: AppColors.mutedForeground),
                               const SizedBox(height: 16),
-                              Text(AppStrings.trWatch(context, 'noItemsAdded'),
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.mutedForeground)),
-                              const SizedBox(height: 8),
-                              Text(AppStrings.trWatch(context, 'tapAddItem'),
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.mutedForeground)),
+                              Text(
+                                AppStrings.trWatch(context, 'noItemsAdded'),
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.mutedForeground),
+                              ),
                             ],
                           ),
                         ),
                       ),
                     )
-                  : SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: OrderItemRow(item: order.items[index]),
+                  : SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(color: AppColors.border, width: 1),
+                              ),
+                              color: AppColors.card,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                                child: OrderItemRow(item: order.items[index]),
+                              ),
+                            ),
+                          ),
+                          childCount: order.items.length,
                         ),
-                        childCount: order.items.length,
                       ),
                     ),
+              // Total Section
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                   child: Card(
-                    color: AppColors.primary.withValues(alpha: 0.08),
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    color: AppColors.primary.withValues(alpha: 0.08),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(AppStrings.trWatch(context, 'totalAmount'),
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                          Text(formatIdr(total),
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                          Text(
+                            AppStrings.trWatch(context, 'totalAmount'),
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
+                          ),
+                          Text(
+                            formatIdr(total),
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
                 ),
               ),
+              // Action Buttons
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 32, 16, 96),
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
                   child: Row(
                     children: [
                       Expanded(
@@ -267,7 +313,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                               : AppStrings.trWatch(context, 'printOrder')),
                           onPressed: _isPrinting ? null : _printOrder,
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             textStyle: Theme.of(context).textTheme.titleMedium,
                           ),
                         ),
@@ -279,7 +328,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           label: Text(AppStrings.trWatch(context, 'deleteOrder')),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.destructive,
-                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             textStyle: Theme.of(context).textTheme.titleMedium,
                           ),
                           onPressed: _deleteOrder,
@@ -288,6 +340,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     ],
                   ),
                 ),
+              ),
+              // Bottom Padding
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 16),
               ),
             ],
           );

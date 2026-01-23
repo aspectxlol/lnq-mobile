@@ -14,6 +14,8 @@ import 'screens/settings/settings_screen.dart';
 import 'l10n/strings.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  
   // Configure image cache for better performance
   imageCache.maximumSize = 100; // Max number of images to cache
   imageCache.maximumSizeBytes = 100 * 1024 * 1024; // 100 MB max cache size
