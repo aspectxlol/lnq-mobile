@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'dart:async';
 import '../../models/order.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/order_filter_provider.dart';
@@ -30,6 +31,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  Timer? _searchDebounceTimer;
 
   @override
   void initState() {
@@ -54,18 +56,33 @@ class _OrdersScreenState extends State<OrdersScreen> {
     }
   }
 
+  void _onSearchChanged(OrderFiltersAndSorts filterProvider, String value) {
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        filterProvider.setSearchQuery(value);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchDebounceTimer?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     context.watch<SettingsProvider>();
+    // Use select to only listen to specific filter properties to avoid unnecessary rebuilds
     final filterProvider = context.watch<OrderFiltersAndSorts>();
+    final isLoaded = context.select<OrderFiltersAndSorts, bool>((provider) => provider.isLoaded);
     
     // Don't load orders until filters are loaded
-    if (!filterProvider.isLoaded) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(AppStrings.trWatch(context, 'orders')),
-        ),
-        body: const Center(
+    if (!isLoaded) {
+      return const Scaffold(
+        appBar: _LoadingAppBar(),
+        body: Center(
           child: CircularProgressIndicator(),
         ),
       );
@@ -73,84 +90,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
     
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(
-        title: Text(AppStrings.trWatch(context, 'orders')),
-        elevation: 0,
-      ),
+      appBar: const _OrdersAppBar(),
       body: Column(
         children: [
           // Search bar and action buttons
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: AppStrings.trWatch(context, 'searchByCustomerOrOrderId'),
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: AppColors.card,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.border, width: 1.5),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.primary, width: 2),
-                      ),
-                      prefixIconColor: AppColors.mutedForeground,
-                    ),
-                    onChanged: (value) {
-                      filterProvider.setSearchQuery(value);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.card,
-                    border: Border.all(color: AppColors.border, width: 1.5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      _currentView == OrderView.list
-                          ? Icons.calendar_month
-                          : Icons.view_list,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _currentView = _currentView == OrderView.list
-                            ? OrderView.calendar
-                            : OrderView.list;
-                      });
-                    },
-                    tooltip: _currentView == OrderView.list
-                        ? AppStrings.trWatch(context, 'switchToCalendarView')
-                        : AppStrings.trWatch(context, 'switchToListViewOrder'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.tune, color: Colors.white),
-                    tooltip: AppStrings.trWatch(context, 'sortAndFilter'),
-                    onPressed: () {
-                      _showFilterBottomSheet(context, filterProvider);
-                    },
-                  ),
-                ),
-              ],
-            ),
+          _SearchAndActionBar(
+            onSearchChanged: (value) => _onSearchChanged(filterProvider, value),
+            onFilterPressed: () => _showFilterBottomSheet(context, filterProvider),
+            onViewChanged: () => setState(() {
+              _currentView = _currentView == OrderView.list
+                  ? OrderView.calendar
+                  : OrderView.list;
+            }),
+            currentView: _currentView,
           ),
           // Body content
           Expanded(
@@ -216,7 +168,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       ),
       builder: (sheetContext) {
         return Consumer<OrderFiltersAndSorts>(
-          builder: (_, provider, __) {
+          builder: (_, provider, _) {
             return DraggableScrollableSheet(
               expand: false,
               initialChildSize: 0.85,
@@ -567,9 +519,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96), // extra bottom padding for FAB
       itemCount: orders.length,
+      cacheExtent: 500, // Optimize viewport cache for smoother scrolling
+      addRepaintBoundaries: true, // Keep true for individual item optimization
       itemBuilder: (context, index) {
         final order = orders[index];
         return OrderCard(
+          key: ValueKey(order.id),
           order: order,
           onTap: () async {
             final result = await Navigator.push(
@@ -721,6 +676,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 itemBuilder: (context, index) {
                   final order = selectedOrders[index];
                   return OrderCard(
+                    key: ValueKey(order.id),
                     order: order,
                     onTap: () async {
                       final result = await Navigator.push(
@@ -739,6 +695,117 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// Extracted const widgets to avoid rebuilds
+class _LoadingAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _LoadingAppBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Text(AppStrings.trWatch(context, 'orders')),
+      elevation: 0,
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(56);
+}
+
+class _OrdersAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _OrdersAppBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Text(AppStrings.trWatch(context, 'orders')),
+      elevation: 0,
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(56);
+}
+
+class _SearchAndActionBar extends StatelessWidget {
+  final Function(String) onSearchChanged;
+  final VoidCallback onFilterPressed;
+  final VoidCallback onViewChanged;
+  final OrderView currentView;
+
+  const _SearchAndActionBar({
+    required this.onSearchChanged,
+    required this.onFilterPressed,
+    required this.onViewChanged,
+    required this.currentView,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: AppStrings.trWatch(context, 'searchByCustomerOrOrderId'),
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: AppColors.card,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.border, width: 1.5),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.primary, width: 2),
+                ),
+                prefixIconColor: AppColors.mutedForeground,
+              ),
+              onChanged: onSearchChanged,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              border: Border.all(color: AppColors.border, width: 1.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: Icon(
+                currentView == OrderView.list
+                    ? Icons.calendar_month
+                    : Icons.view_list,
+              ),
+              onPressed: onViewChanged,
+              tooltip: currentView == OrderView.list
+                  ? AppStrings.trWatch(context, 'switchToCalendarView')
+                  : AppStrings.trWatch(context, 'switchToListViewOrder'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.tune, color: Colors.white),
+              tooltip: AppStrings.trWatch(context, 'sortAndFilter'),
+              onPressed: onFilterPressed,
+            ),
+          ),
+        ],
       ),
     );
   }

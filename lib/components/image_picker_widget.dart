@@ -79,6 +79,8 @@ class ImagePickerWidget extends StatelessWidget {
             height: height,
             width: double.infinity,
             fit: BoxFit.cover,
+            cacheHeight: (height * MediaQuery.of(context).devicePixelRatio).toInt(),
+            cacheWidth: (MediaQuery.of(context).size.width * MediaQuery.of(context).devicePixelRatio).toInt(),
             errorBuilder: (context, error, trace) {
               return Container(
                 height: height,
