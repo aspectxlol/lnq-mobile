@@ -6,27 +6,74 @@ import 'package:lnq/screens/products/edit_product_screen.dart';
 import 'package:provider/provider.dart';
 import 'constants/app_constants.dart';
 import 'providers/settings_provider.dart';
+import 'providers/order_filter_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/products/products_screen.dart';
 import 'screens/orders/orders_screen.dart';
 import 'screens/settings/settings_screen.dart';
-import '../l10n/strings.dart';
+import 'l10n/strings.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Configure image cache for better performance
+  imageCache.maximumSize = 100; // Max number of images to cache
+  imageCache.maximumSizeBytes = 100 * 1024 * 1024; // 100 MB max cache size
+  
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => SettingsProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => OrderFiltersAndSorts()),
+      ],
       child: const MyApp(),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _discoveryStarted = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final settings = context.watch<SettingsProvider>();
+    if (!_discoveryStarted && settings.isInitialized) {
+      _discoveryStarted = true;
+      // Start backend discovery after settings are loaded
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        settings.attemptBackendDiscovery();
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final locale = context.watch<SettingsProvider>().locale;
+    final settings = context.watch<SettingsProvider>();
+    final locale = settings.locale;
+
+    if (!settings.isInitialized) {
+      // Show a splash/loading screen until settings are loaded
+      return MaterialApp(
+        title: 'LNQ',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.darkTheme,
+        locale: locale,
+        home: const Scaffold(
+          backgroundColor: Color(0xFF1A1A1A),
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
 
     return MaterialApp(
       title: 'LNQ',
@@ -68,7 +115,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin {
-  int _currentIndex = 0;
+  int _currentIndex = 1;
   late AnimationController _fabAnimationController;
 
   static const List<Widget> _screens = [
