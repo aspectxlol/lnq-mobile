@@ -146,7 +146,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   }
                   // Remove formatting (dots) before parsing
                   final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
-                  if (digitsOnly.isEmpty || int.tryParse(digitsOnly) == null) {
+                  if (digitsOnly.isEmpty || int.tryParse(digitsOnly) == null || digitsOnly == '0') {
                     return AppStrings.tr(context, 'priceRequired');
                   }
                   return null;

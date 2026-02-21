@@ -65,7 +65,8 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
         : '',
     );
     if (!mounted) return null;
-    return await showDialog<OrderItemData>(
+    
+    final result = await showDialog<OrderItemData>(
       context: context,
       builder: (dialogContext) {
         // Only show custom dialog if adding/editing a custom item
@@ -211,6 +212,14 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
         }
       },
     );
+    
+    // Dispose controllers to prevent memory leaks
+    nameController.dispose();
+    priceController.dispose();
+    notesController.dispose();
+    priceAtSaleController.dispose();
+    
+    return result;
   }
 
   @override
