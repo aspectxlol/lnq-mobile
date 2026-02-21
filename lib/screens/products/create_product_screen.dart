@@ -66,7 +66,9 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     try {
       final name = _nameController.text.trim();
       final description = _descriptionController.text.trim();
-      final price = int.parse(_priceController.text.trim());
+      // Remove formatting (dots) before parsing price
+      final priceText = _priceController.text.replaceAll(RegExp(r'[^0-9]'), '');
+      final price = int.parse(priceText);
 
       List<int>? imageBytes;
       String? imageFilename;
@@ -142,7 +144,9 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   if (value == null || value.trim().isEmpty) {
                     return AppStrings.tr(context, 'priceRequired');
                   }
-                  if (int.tryParse(value.trim()) == null) {
+                  // Remove formatting (dots) before parsing
+                  final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+                  if (digitsOnly.isEmpty || int.tryParse(digitsOnly) == null) {
                     return AppStrings.tr(context, 'priceRequired');
                   }
                   return null;
