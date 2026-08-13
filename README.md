@@ -1,6 +1,13 @@
 
 # LNQ Mobile App
 
+> **Archived**
+>
+> This repository is no longer actively maintained and will be archived.
+> Development is continuing in a new implementation at [`aspectxlol/lnq`](https://github.com/aspectxlol/lnq).
+> Please refer to the new repository for the latest implementation and ongoing development.
+
+
 **LNQ** is a comprehensive cross-platform mobile application built with **Flutter**. It provides robust order management features, including order creation, real-time filtering, detailed order views, and order editing capabilities. The application is fully responsive and supports Android, iOS, web, Windows, macOS, and Linux platforms.
 
 ## Table of Contents
